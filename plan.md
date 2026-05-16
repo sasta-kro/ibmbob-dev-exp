@@ -1121,6 +1121,7 @@ pytest-cov>=4.1.0
 - Multi-language support (Java, Go, Ruby, PHP)
 - Enhanced visualizations
 - Export to PDF
+- Repo onboarding explanation (for new devs to get familiar with the repo fast)
 
 ### Version 1.2
 - Project history and comparison
@@ -1270,12 +1271,12 @@ review:
 
 ## Questions for Clarification
 
-1. Do you have an IBM Watson API key ready, or should we plan for static-analysis-only MVP first?
-2. What operating systems should we prioritize? (Windows, macOS, Linux)
+1. Do you have an IBM Watson API key ready, or should we plan for static-analysis-only MVP first? ans: key ready
+2. What operating systems should we prioritize? (Windows, macOS, Linux) ans: first MacOS, then Linux, then Windows
 3. Do you want CLI support in addition to GUI?
-4. Should the app support analyzing remote repositories (GitHub URLs)?
-5. Any specific programming languages to prioritize beyond Python/JavaScript?
-6. Do you want the app to integrate with version control (git) for tracking changes over time?
+4. Should the app support analyzing remote repositories (GitHub URLs)? ans: not in the MVP, maybe in future versions
+5. Any specific programming languages to prioritize beyond Python/JavaScript? ans: will be determined later when MVP is done
+6. Do you want the app to integrate with version control (git) for tracking changes over time? ans: eventually yes
 
 ---
 
