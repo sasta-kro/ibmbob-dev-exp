@@ -2,463 +2,121 @@
 
 ## Project Overview
 
-**Project Name:** Codebase Analyzer  
-**Type:** Python Desktop Application (Flet-based)  
-**Purpose:** AI-powered codebase analysis, documentation generation, code review, and improvement suggestions  
+**Project Name:** Codebase Analyzer
+**Type:** Python Desktop Application (Flet-based)
+**Purpose:** AI-powered codebase analysis, documentation generation, code review, and improvement suggestions
 **Current Phase:** Phase 6 Stabilized (Dashboard UI) - Ready for Phase 7 first pass
 **Last Updated:** 2026-05-16
 
 ---
 
-## Recent Stabilization Notes
+## Recent Stabilization Notes (2026-05-16)
 
-- 2026-05-16: Bob's Phase 3 stabilization pass regressed `AnalysisOrchestrator.analyze_project()` by moving `return project` out of the method. The follow-up fix restored the return, removed the unreachable documentation return, connected API reference generation to the documentation flow, and added a smoke test for analysis plus documentation output. Phase 3 and Phase 4 smoke tests passed on 2026-05-16.
-- 2026-05-16: Bob's Phase 4 pass inserted `review_project()` inside `generate_documentation()`, causing documentation generation to skip `INDEX.md` and return `None`. The follow-up fix restored the documentation method boundary, kept review orchestration separate, connected review findings back to the `Project`, added `functionalityAreas` to review JSON output, fixed `FindingSummary` serialization, and corrected `AIReviewer` calls to match the existing `WatsonService.analyze_code()` signature. Phase 3 and Phase 4 smoke tests passed on 2026-05-16.
-- 2026-05-16: Bob's Phase 5 pass added the suggestion engine, but the smoke test used invalid `Project` constructor fields and did not prove `Project` state integration. The follow-up fix changed the test to use the real `Project` model contract, updated `AnalysisOrchestrator.generate_suggestions()` to store prioritized suggestions on `Project`, refreshed `Project.suggestion_summary`, and generated the roadmap from the same prioritized list. Phase 3, Phase 4, and Phase 5 smoke tests passed on 2026-05-16.
-- 2026-05-16: Bob's Phase 6 pass created the Flet UI, but it used non-existent finding model names and fields, skipped the required documentation browser, left folder selection as a no-op, and used old Flet helper APIs against Flet 0.85.1. The follow-up fix updated UI calls to the installed Flet API directly, added the documentation browser and route, connected scan execution to `AnalysisOrchestrator`, updated finding and suggestion status actions to mutate model state, and replaced the Phase 6 test with real model integration coverage. Phase 6 smoke tests passed on 2026-05-16.
+- Phase 3: Restored `AnalysisOrchestrator.analyze_project()` return, removed unreachable documentation return, connected API reference generation, added analysis + documentation smoke test. Phase 3 and Phase 4 tests passed.
+- Phase 4: Moved `review_project()` out of `generate_documentation()`, connected findings to `Project`, added `functionalityAreas` to review JSON, fixed `FindingSummary` serialization, corrected `AIReviewer` call signature. Phase 3 and Phase 4 tests passed.
+- Phase 5: Fixed smoke test to use valid `Project` fields, stored prioritized suggestions on `Project`, refreshed `Project.suggestion_summary`, generated roadmap from the prioritized list. Phase 3, Phase 4, and Phase 5 tests passed.
+- Phase 6: Updated Flet 0.85.1 API usage, added documentation browser and route, connected scan execution to `AnalysisOrchestrator`, updated finding and suggestion status actions, replaced Phase 6 test with real model integration. Phase 6 tests passed.
 
 ---
 
 ## Architecture Summary
 
-### Core Design Pattern
-**Modular Pipeline Architecture** with clear separation of concerns:
-- **Scanner** → **Analyzer** → **Grouper** → **Orchestrator**
-- Services layer for external integrations (Watson AI, Cache)
-- Pydantic models for type-safe data structures
-- Configuration-driven behavior
+- Pipeline: Scanner -> AnalyzerEngine -> FunctionalityGrouper -> AnalysisOrchestrator
+- Orchestrator coordinates documentation, review, and suggestion flows
+- Services: WatsonService, CacheService
+- Models: Pydantic BaseModel with custom json_encoders
+- Configuration: YAML config with dotenv and env overrides
+- Logging: Loguru with console and file handlers
 
 ### Technology Stack
-- **UI:** Flet (Flutter-based, Material Design)
-- **AI:** IBM Watson AI (watsonx.ai) with granite-code model
-- **Analysis:** Python AST, tree-sitter (planned for JS/TS)
-- **Storage:** SQLite for caching
-- **Config:** YAML + environment variables
-- **Logging:** Loguru with file rotation
+- UI: Flet
+- AI: IBM watsonx.ai REST API
+- Analysis: Python AST, JS/TS regex analysis
+- Storage: SQLite cache in `.cache/analysis_cache.db`
+- Templates: Jinja2
 
 ---
 
 ## Key Components
 
-### 1. Data Models (`src/models/`)
-**Status:** Complete and production-ready
+### Models (`codebase-analyzer/src/models/`)
+- **FileInfo**: file metadata, imports, code elements, metrics, language features, AI summary and purpose
+- **Finding**: severity, type, location, remediation fields, status flags
+- **Suggestion**: effort, impact, priority score, implementation steps, status
+- **FunctionalityGroup** and **FunctionalityMap**: grouped files with dependencies and metrics
+- **Project**: metrics, analysis status, findings and suggestions, summaries
 
-**FileInfo Model:**
-- Comprehensive file metadata (path, size, timestamps, encoding)
-- Code structure (imports, exports, code elements)
-- Metrics (LOC, complexity, maintainability index)
-- AI-generated insights (summary, purpose)
-- Helper methods for filtering (get_functions, get_classes, get_public_api)
+### Core Engines (`codebase-analyzer/src/core/`)
+- **scanner.py**: recursive scan, ignore patterns from `config/default_ignore.txt`, 10 MB size limit, chardet fallback, language detection, framework detection from package.json, requirements.txt, pom.xml
+- **analyzer.py**: Python AST parsing, metrics, feature detection, JS/TS import and framework detection by regex
+- **grouper.py**: directory grouping, dependency graph from imports, pattern detection, merge into functionality groups
+- **orchestrator.py**: pipeline coordination, AI enhancement on up to 50 important files, cache write path, documentation, review, suggestions
 
-**Finding Model:**
-- Code review findings with severity levels (critical → info)
-- Classification by type (bug, security, performance, style, etc.)
-- Location tracking with code snippets
-- Remediation recommendations
-- Status tracking (resolved, false positive)
+### Services (`codebase-analyzer/src/services/`)
+- **watson_service.py**: token refresh, retry session, in-memory cache with TTL, analyze_code returns AIAnalysisResult
+- **cache_service.py**: SQLite cache with file_analysis, ai_responses, project_metadata tables and TTL cleanup
 
-**Suggestion Model:**
-- Improvement suggestions with effort/impact analysis
-- Priority scoring algorithm
-- Implementation steps and guidance
-- Status tracking (pending → completed)
-- Quick win identification (low effort, high impact)
+### Generators (`codebase-analyzer/src/generators/`)
+- **markdown_generator.py**: project overview, group docs, per-file docs, API reference, custom filters
+- **index_generator.py**: INDEX.md with TOC, reading order, metrics, links
+- **templates**: `project_overview.md.j2`, `functionality_group.md.j2`, `file_documentation.md.j2`, `api_reference.md.j2`
 
-**FunctionalityGroup Model:**
-- Groups related files by purpose
-- Dependency tracking between groups
-- Complexity scoring
-- Entry point identification
+### Review (`codebase-analyzer/src/review/`)
+- **static_analyzer.py**: pattern checks, pylint, bandit, radon, AST rules
+- **ai_reviewer.py**: Watson analysis for bugs, security, performance, design
+- **finding_classifier.py**: dedupe, classification, prioritization, quick wins
+- **review_engine.py**: writes `review-findings.json` and `REVIEW_REPORT.md`, updates Project findings
 
-**Project Model:**
-- Central aggregation of all analysis results
-- Metrics rollup (total files, lines, complexity)
-- Status tracking for analysis pipeline
-- Save/load to JSON
+### Suggestions (`codebase-analyzer/src/suggestions/`)
+- **suggestion_generator.py**: per-finding and pattern-based suggestions, optional AI enhancement
+- **prioritizer.py**: scoring, quick wins, filtering, implementation order
+- **roadmap_generator.py**: writes `improvement-suggestions.json` and `IMPROVEMENT_ROADMAP.md`
 
-### 2. Core Engines (`src/core/`)
+### UI (`codebase-analyzer/src/ui/`)
+- **app.py**: NavigationRail pages, FilePicker, scan orchestration, settings for AI, docs, review, suggestions
 
-**Scanner (`scanner.py` - 482 lines):**
-- Recursive directory traversal with gitignore-style patterns
-- 20+ language detection via file extensions
-- Framework detection (React, Vue, Django, Flask, Express, Next.js, Spring)
-- Binary file filtering and large file handling (10MB limit)
-- Encoding detection with chardet fallback
-- Progress callback support for UI updates
-
-**Analyzer (`analyzer.py` - 551 lines):**
-- Python AST parsing with full code element extraction
-- Cyclomatic complexity calculation
-- Import/export analysis
-- Language feature detection (async/await, type hints, decorators, f-strings, etc.)
-- JavaScript/TypeScript basic analysis (regex-based, can be enhanced)
-- Parallel processing with ThreadPoolExecutor
-- Dependency graph building
-
-**Grouper (`grouper.py` - 491 lines):**
-- Multi-strategy grouping:
-  1. Directory structure analysis
-  2. Pattern-based detection (15 predefined patterns)
-  3. Dependency graph analysis
-  4. Semantic understanding (AI-enhanced)
-- Cross-group dependency tracking
-- Entry point identification
-- Complexity scoring per group
-- Categories: Authentication, Database, API, UI, Testing, Configuration, Utilities, Security, Payment, Notification, Analytics, Admin, User, Search, Storage
-
-**Orchestrator (`orchestrator.py` - 387 lines):**
-- Unified analysis pipeline coordinator
-- Smart file selection for AI (top 50 important files based on complexity, size, entry points)
-- Cache integration throughout pipeline
-- Progress tracking with callbacks
-- Graceful degradation when AI unavailable
-- Project object creation and metadata caching
-
-### 3. Services (`src/services/`)
-
-**Watson Service (`watson_service.py` - 454 lines):**
-- IBM watsonx.ai REST API integration
-- Token-based authentication with auto-refresh (5min safety margin)
-- Multiple model support (granite-code, codellama, mixtral)
-- Retry logic with exponential backoff
-- Response caching (SHA256-based keys)
-- Three analysis modes:
-  1. Code analysis (summary, purpose, functionality)
-  2. Bug detection (logic errors, security issues)
-  3. Improvement suggestions (performance, quality, security)
-- JSON response parsing with fallback to text parsing
-
-**Cache Service (`cache_service.py` - 529 lines):**
-- SQLite-based persistent storage
-- Three cache tables:
-  1. file_analysis (content hash-based)
-  2. ai_responses (prompt hash-based)
-  3. project_metadata (project path-based)
-- TTL-based expiration (7 days default)
-- Automatic cleanup of expired entries
-- Thread-safe operations with context managers
-- Database optimization (VACUUM)
-- Statistics tracking
-
-### 4. Utilities (`src/utils/`)
-
-**Config (`config.py` - 247 lines):**
-- YAML-based configuration with environment variable overrides
-- Dot-notation access (e.g., 'app.name')
-- Property-based convenience accessors
-- Default configuration fallback
-- Global singleton pattern
-
-**Logger (`logger.py` - 67 lines):**
-- Loguru-based logging
-- Console output with colors
-- File output with rotation (10MB) and retention (7 days)
-- Compression of old logs (zip)
-- Module-specific logger binding
-
----
-
-## Design Patterns Used
-
-1. **Pipeline Pattern:** Scanner → Analyzer → Grouper → Orchestrator
-2. **Strategy Pattern:** Multiple grouping strategies in Grouper
-3. **Factory Pattern:** Model creation methods
-4. **Singleton Pattern:** Global config instance
-5. **Observer Pattern:** Progress callbacks
-6. **Repository Pattern:** Cache service as data access layer
-7. **Dependency Injection:** Config passed to all components
-
----
-
-## Code Quality Observations
-
-### Strengths
-- Comprehensive docstrings on all classes and methods
-- Type hints throughout (Python 3.10+ style)
-- Descriptive variable and function names
-- Self-documenting code structure
-- Proper error handling with logging
-- Modular and reusable components
-- Clear separation of concerns
-- Consistent "Made with Bob" signature
-
-### Areas for Enhancement
-1. **JavaScript/TypeScript Analysis:** Currently regex-based, could use proper AST parser (esprima/babel)
-2. **Test Coverage:** Phase smoke tests exist; broader unit and integration coverage remains scheduled for Phase 7
-3. **UI Polish:** Phase 6 UI exists; async execution, persistence, and deprecation cleanup remain for Phase 7
-4. **HTML Documentation Export:** Markdown documentation exists; HTML export remains future work
-5. **Pydantic V2 Cleanup:** Models still use deprecated class-based config and `json_encoders`
-
----
-
-## Configuration System
-
-### Environment Variables (`.env`)
-- Watson AI credentials (API key, project ID, model)
-- Cache settings (TTL, enabled/disabled)
-- Analysis settings (max workers, file size limit)
-- UI settings (theme, window dimensions)
-
-### Config File (`config/config.yaml`)
-- Ignore patterns (gitignore-style)
-- Language configurations
-- Review severity levels
-- Documentation settings
-- Export formats
-
-### Ignore Patterns
-Comprehensive default ignore list including:
-- Version control (.git, .svn, .hg)
-- Dependencies (node_modules, venv, vendor)
-- Build outputs (dist, build, target)
-- IDE files (.vscode, .idea)
-- Compiled files (*.pyc, *.class, *.o)
-- Minified files (*.min.js, *.bundle.js)
-- Lock files (package-lock.json, poetry.lock)
-- Logs and temp files
-- Large media files
+### Utilities (`codebase-analyzer/src/utils/`)
+- **config.py**: YAML config, dotenv, dot-notation access, env overrides
+- **logger.py**: Loguru console and file logging, 10 MB rotation, 7 day retention, zip compression
 
 ---
 
 ## Data Flow
 
-1. **Input:** Project path(s)
-2. **Scanning:** Discover files, filter by patterns, extract metadata
-3. **Analysis:** Parse code, extract structure, calculate metrics
-4. **AI Enhancement:** Semantic analysis on important files (optional)
-5. **Grouping:** Organize files by functionality
-6. **Framework Detection:** Identify technologies used
-7. **Project Creation:** Aggregate all results
-8. **Caching:** Store results for future runs
-9. **Output:** Project object with complete analysis
+1. Input paths
+2. Scan and filter files
+3. Analyze structure and metrics
+4. AI enhancement for selected files when enabled
+5. Group by functionality
+6. Generate documentation, review, and suggestions
+7. Persist outputs and show in UI
 
 ---
 
-## Performance Optimizations
+## Configuration
 
-1. **Parallel Processing:** ThreadPoolExecutor for file analysis
-2. **Smart AI Selection:** Only analyze top 50 important files
-3. **Content-based Caching:** SHA256 hashes prevent re-analysis
-4. **Lazy Loading:** Read files only when needed
-5. **Database Indexing:** Optimized SQLite queries
-6. **Progress Callbacks:** Non-blocking UI updates
-
----
-
-## Error Handling Strategy
-
-- Try-except blocks at component boundaries
-- Graceful degradation (AI optional, cache optional)
-- Comprehensive logging at all levels
-- User-friendly error messages
-- Continue on file-level errors, collect in error list
-- Timeout handling for long operations
-
----
-
-## Integration Points
-
-### Watson AI Integration
-- REST API with Bearer token authentication
-- Token refresh before expiry
-- Configurable models and parameters
-- Fallback when unavailable
-
-### Cache Integration
-- Transparent to callers
-- Content hash-based invalidation
-- Automatic cleanup
-- Statistics for monitoring
-
-### UI Integration (Planned)
-- Progress callbacks for real-time updates
-- Async operations for responsiveness
-- Status tracking in Project model
+- `config/config.yaml` loaded by Config with defaults when missing
+- `.env` read via dotenv for runtime overrides
+- Key env values: `WATSON_API_KEY`, `WATSON_PROJECT_ID`, `WATSON_URL`, `WATSON_MODEL_ID`, `WATSON_MAX_TOKENS`, `WATSON_TEMPERATURE`, `LOG_LEVEL`, `ENABLE_AI_ANALYSIS`, `CACHE_ENABLED`, `CACHE_TTL_HOURS`, `WINDOW_WIDTH`, `WINDOW_HEIGHT`
+- Ignore patterns from `config/default_ignore.txt` plus `ignore_patterns` in config
 
 ---
 
 ## Current Limitations
 
-1. **Language Support:** Full AST only for Python; JS/TS basic only
-2. **AI Cost:** Limited to 50 files per analysis to control costs
-3. **Cache Growth:** SQLite can grow large, needs periodic cleanup
-4. **No Real-time:** Analysis is batch-based, not incremental
-5. **Single Project:** No multi-project comparison yet
+1. JS and TS analysis uses regex, no full AST
+2. AI analysis limited to 50 selected files per run
+3. Cache read path exists but cached analysis restore not implemented in orchestrator
+4. Batch analysis only, no incremental updates
+5. Single project workflow
 
 ---
 
-## Next Steps (Phase 7)
+## Phase 7 Next Steps
 
-**Testing and Polish:**
 - Expand unit and integration coverage
 - Add UI interaction tests where practical
-- Move long-running analysis off the main UI event path
+- Move long-running analysis off the UI event path
 - Persist settings and recent project history
 - Replace deprecated Flet controls before Flet 1.0
 - Polish documentation and release readiness
-
----
-
-## Important Notes
-
-### For Future Development
-1. All Phase 2 components are production-ready
-2. Use Orchestrator as main entry point
-3. Cache service auto-initializes
-4. Watson AI gracefully degrades if not configured
-5. Models are fully type-safe with Pydantic
-6. Configuration is centralized and environment-aware
-
-### Testing Strategy (Phase 7)
-1. Create fixtures with sample projects
-2. Mock Watson API to avoid costs
-3. Use temporary directories for cache
-4. Test with and without AI enabled
-5. Test parallel processing edge cases
-
-### Code Style Compliance
-- No em-dashes: compliant
-- No emojis in code: compliant
-- No personal pronouns in docs: compliant
-- Descriptive names: compliant
-- Self-documenting code: compliant
-- Comments for purpose, not restating behavior: compliant
-
----
-
-## References
-
-- **Architecture:** `plan.md` (1283 lines, comprehensive technical plan)
-- **Implementation Guide:** `IMPLEMENTATION_GUIDE.md` (320 lines, phase-by-phase guide)
-- **Phase 2 Report:** `.memory/Implementation_progress/PHASE2_COMPLETION.md`
-- **Requirements:** `codebase-analyzer/requirements.txt`
-- **Config:** `codebase-analyzer/config/config.yaml`
-- **Agent Rules:** `AGENTS.md`
-### 5. Documentation Generators (`src/generators/`)
-
-**Markdown Generator (`markdown_generator.py` - 429 lines):**
-- Jinja2 template engine integration
-- Custom filters (format_date, format_size, format_complexity, escape_markdown)
-- Project overview documentation generation
-- Functionality group documentation
-- Per-file documentation with code structure
-- API reference generation
-- Fallback content when templates fail
-- Safe cross-platform filename generation
-
-**Index Generator (`index_generator.py` - 375 lines):**
-- Main index page with navigation
-- Table of contents generation
-- Cross-reference linking
-- Reading order suggestions based on dependencies
-- Search keyword generation
-- File grouping by directory
-- Relative path calculation for links
-- Statistics and metrics summary
-
-**Jinja2 Templates (`src/templates/`):**
-- `project_overview.md.j2` (152 lines) - Project summary, metrics, groups
-- `functionality_group.md.j2` (197 lines) - Group details, files, components
-
-### 6. Code Review Components (`src/review/`)
-
-**Static Analyzer (`static_analyzer.py` - 697 lines):**
-- Pattern-based detection (security, bugs, performance)
-- Pylint integration for code quality
-- Bandit integration for security scanning
-- Complexity analysis
-- AST-based analysis (bare except, mutable defaults)
-- Finding deduplication
-- Code snippet extraction with context
-- 10 predefined detection patterns
-
-**AI Reviewer (`ai_reviewer.py` - 524 lines):**
-- IBM Watson AI integration for deep analysis
-- Smart file selection (top 50 important files)
-- Bug detection (logic errors, type mismatches, race conditions)
-- Security vulnerability detection (SQL injection, XSS, auth issues)
-- Performance issue detection (N+1 queries, inefficient algorithms)
-- Design issue detection (SOLID violations, code duplication)
-- AI response parsing into Finding objects
-- Confidence scoring and code snippet extraction
-
-**Finding Classifier (`finding_classifier.py` - 365 lines):**
-- Multi-dimensional classification (severity, type, file, source)
-- Priority scoring algorithm (severity + confidence + type + actionability)
-- Finding deduplication with confidence-based selection
-- Statistical analysis and metrics calculation
-- Filtering by severity, type, confidence
-- Quick wins identification (low effort, high impact)
-- High priority finding detection
-- Grouping and aggregation
-
-**Review Engine (`review_engine.py` - 378 lines):**
-- Main coordinator for all review activities
-- Static analysis orchestration
-- AI review orchestration (optional)
-- Finding classification and prioritization
-- JSON report generation (review-findings.json)
-- Markdown report generation (REVIEW_REPORT.md)
-- Comprehensive statistics and summaries
-- Integration with Project model
-
-**Orchestrator Integration:**
-- ReviewEngine initialized in AnalysisOrchestrator
-- New `review_project()` method for code reviews
-- Seamless integration with analysis pipeline
-- Optional AI-powered review
-- Configurable output directory
-
-- `file_documentation.md.j2` (280 lines) - File structure, API, metrics
-- `api_reference.md.j2` (137 lines) - Public API reference
-
-### 7. Suggestion Components (`src/suggestions/`)
-
-**Suggestion Generator (`suggestion_generator.py`):**
-- Generates suggestions from review findings
-- Adds pattern-based suggestions for repeated file, security, performance, and documentation issues
-- Estimates effort and impact levels
-- Builds implementation steps, benefits, considerations, and risk notes
-
-**Prioritizer (`prioritizer.py`):**
-- Calculates priority scores
-- Sorts suggestions into implementation order
-- Identifies quick wins and high priority work
-- Groups and filters suggestions by category, effort, and impact
-
-**Roadmap Generator (`roadmap_generator.py`):**
-- Creates `improvement-suggestions.json`
-- Creates `IMPROVEMENT_ROADMAP.md`
-- Builds immediate, short-term, and long-term recommendation sections
-
-**Orchestrator Integration:**
-- `AnalysisOrchestrator.generate_suggestions()` initializes the Phase 5 flow
-- Prioritized suggestions are stored on `Project.suggestions`
-- `Project.suggestion_summary` is updated after generation
-
-### 8. Dashboard UI (`src/ui/`)
-
-**Application Shell (`app.py`):**
-- Flet navigation rail with Home, Scan, Overview, Documentation, Findings, Suggestions, and Settings pages
-- Folder selection through Flet `FilePicker`
-- Analysis orchestration from the scan page
-- Documentation, review, and suggestion generation options
-- Finding and suggestion action handlers update model state and summaries
-
-**Pages (`src/ui/pages/`):**
-- Home page with new analysis entry point and recent project shell
-- Scan page with selected paths, analysis options, progress stages, and cancel control
-- Overview page with project metrics and charts
-- Documentation page for generated Markdown files
-- Findings page with filtering, search, sorting, and finding cards
-- Suggestions page with filtering, search, sorting, and quick win display
-- Settings page with analysis and appearance controls
-
-**Components (`src/ui/components/`):**
-- Cards for findings, suggestions, and progress
-- Filter panel, search bar, and sort control
-- Chart and metric display components
-
-**Stabilization Notes:**
-- UI code now uses installed Flet 0.85.1 API names directly
-- Phase 6 smoke tests instantiate real `Project`, `Finding`, and `Suggestion` objects
