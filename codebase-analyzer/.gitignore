@@ -1,0 +1,79 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment Variables
+.env
+.env.local
+
+# Logs
+logs/
+*.log
+
+# Cache
+.cache/
+*.db
+*.sqlite
+*.sqlite3
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Documentation Build
+_build/
+site/
+
+# Output
+output/
+generated/
+*.json
+*.md
+!README.md
+!IMPLEMENTATION_GUIDE.md
+!plan.md
+
+# OS
+Thumbs.db
+desktop.ini
+
+# Temporary
+*.tmp
+*.temp
+*.bak
+
+# Made with Bob

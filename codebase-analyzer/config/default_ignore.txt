@@ -1,0 +1,104 @@
+# Version Control
+.git/
+.svn/
+.hg/
+.gitignore
+
+# Dependencies
+node_modules/
+bower_components/
+vendor/
+.venv/
+venv/
+env/
+__pycache__/
+*.egg-info/
+
+# Build Outputs
+dist/
+build/
+out/
+target/
+.next/
+.nuxt/
+.output/
+*.wasm
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Compiled & Binary
+*.pyc
+*.pyo
+*.so
+*.dll
+*.exe
+*.dylib
+*.class
+*.o
+*.a
+*.lib
+
+# Minified Files
+*.min.js
+*.min.css
+*.bundle.js
+*.chunk.js
+
+# Lock Files
+package-lock.json
+yarn.lock
+poetry.lock
+Pipfile.lock
+composer.lock
+
+# Logs & Temp
+*.log
+*.tmp
+*.temp
+*.cache
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Documentation Build
+_build/
+site/
+.docusaurus/
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Large Media Files
+*.mp4
+*.avi
+*.mov
+*.mp3
+*.wav
+*.flac
+*.zip
+*.tar
+*.gz
+*.rar
+*.7z
+*.iso
+*.dmg
+
+# Database Files
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment Files
+.env
+.env.local
+.env.*.local

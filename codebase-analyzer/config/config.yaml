@@ -1,0 +1,144 @@
+# Codebase Analyzer Configuration
+
+# Application Settings
+app:
+  name: "Codebase Analyzer"
+  version: "1.0.0"
+  log_level: "INFO"
+  
+# Analysis Settings
+analysis:
+  max_file_size_mb: 10
+  max_workers: 4
+  enable_ai_analysis: true
+  timeout_seconds: 300
+  
+# Ignore Patterns (gitignore-style)
+ignore_patterns:
+  # Version Control
+  - ".git/"
+  - ".svn/"
+  - ".hg/"
+  
+  # Dependencies
+  - "node_modules/"
+  - "bower_components/"
+  - "vendor/"
+  - ".venv/"
+  - "venv/"
+  - "env/"
+  - "__pycache__/"
+  
+  # Build Outputs
+  - "dist/"
+  - "build/"
+  - "out/"
+  - "target/"
+  - ".next/"
+  - ".nuxt/"
+  - ".output/"
+  
+  # IDE & Editor
+  - ".vscode/"
+  - ".idea/"
+  - "*.swp"
+  - "*.swo"
+  - "*~"
+  - ".DS_Store"
+  
+  # Compiled & Binary
+  - "*.pyc"
+  - "*.pyo"
+  - "*.so"
+  - "*.dll"
+  - "*.exe"
+  - "*.dylib"
+  - "*.class"
+  - "*.o"
+  
+  # Minified Files
+  - "*.min.js"
+  - "*.min.css"
+  - "*.bundle.js"
+  
+  # Lock Files
+  - "package-lock.json"
+  - "yarn.lock"
+  - "poetry.lock"
+  - "Pipfile.lock"
+  
+  # Logs & Temp
+  - "*.log"
+  - "*.tmp"
+  - "*.temp"
+  - "*.cache"
+  - ".pytest_cache/"
+  - ".coverage"
+  
+  # Documentation Build
+  - "_build/"
+  - "site/"
+  
+# Supported Languages
+languages:
+  python:
+    extensions: [".py", ".pyw"]
+    ast_parser: "python"
+    linters: ["pylint", "bandit", "mypy"]
+    
+  javascript:
+    extensions: [".js", ".jsx", ".mjs"]
+    ast_parser: "tree-sitter"
+    linters: []
+    
+  typescript:
+    extensions: [".ts", ".tsx"]
+    ast_parser: "tree-sitter"
+    linters: []
+
+# Code Review Settings
+review:
+  severity_levels:
+    - "critical"
+    - "high"
+    - "medium"
+    - "low"
+    - "info"
+    
+  finding_types:
+    - "bug"
+    - "security"
+    - "performance"
+    - "style"
+    - "maintainability"
+    - "documentation"
+    
+  confidence_threshold: 0.7
+  
+# Documentation Settings
+documentation:
+  output_format: "markdown"
+  include_metrics: true
+  include_dependencies: true
+  max_file_lines_preview: 50
+  
+# Cache Settings
+cache:
+  enabled: true
+  ttl_hours: 24
+  database_path: ".cache/analyzer.db"
+  
+# UI Settings
+ui:
+  theme: "light"
+  window_width: 1400
+  window_height: 900
+  enable_animations: true
+  
+# Export Settings
+export:
+  formats: ["json", "markdown"]
+  include_timestamps: true
+  compress_output: false
+
+# Made with Bob
