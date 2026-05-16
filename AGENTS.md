@@ -1,4 +1,5 @@
 # AGENTS.md
+
 ## User Preferences
 ### Wording and Formatting
 In the codebase, and in the documentations:
@@ -13,6 +14,12 @@ In the codebase, and in the documentations:
 - Descriptive function names
 - The code itself should be descriptive enough to explain what it is doing without comments.
 - Comments are should be for 'why' and not 'what' as the 'what' should be knowable just from the code itself.
+
+---
+
+## Meta Documentation
+- Do NOT read the .meta-docs/ directory unless explicitly asked.
+
 
 ---
 
