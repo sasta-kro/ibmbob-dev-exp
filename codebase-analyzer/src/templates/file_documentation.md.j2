@@ -1,0 +1,289 @@
+# {{ file.name }}
+
+**Path:** `{{ file.relative_path }}`  
+**Type:** {{ file.file_type.value }}  
+**Generated:** {{ generated_at|format_date }}
+
+---
+
+## File Overview
+
+{% if file.ai_summary %}
+### Summary
+
+{{ file.ai_summary }}
+{% endif %}
+
+{% if file.ai_purpose %}
+### Purpose
+
+{{ file.ai_purpose }}
+{% endif %}
+
+### Metadata
+
+| Property | Value |
+|----------|-------|
+| **Size** | {{ file.size_bytes|format_size }} |
+| **Encoding** | {{ file.encoding }} |
+| **Created** | {{ file.created_at|format_date }} |
+| **Modified** | {{ file.modified_at|format_date }} |
+| **Analyzed** | {{ file.analyzed_at|format_date }} |
+
+---
+
+## Code Metrics
+
+| Metric | Value |
+|--------|-------|
+| **Lines of Code** | {{ file.metrics.lines_of_code }} |
+| **Blank Lines** | {{ file.metrics.blank_lines }} |
+| **Comment Lines** | {{ file.metrics.comment_lines }} |
+| **Total Complexity** | {{ file.metrics.complexity|format_complexity }} |
+| **Functions** | {{ file.metrics.functions_count }} |
+| **Classes** | {{ file.metrics.classes_count }} |
+| **Methods** | {{ file.metrics.methods_count }} |
+{% if file.metrics.maintainability_index %}
+| **Maintainability Index** | {{ "%.2f"|format(file.metrics.maintainability_index) }}/100 |
+{% endif %}
+
+---
+
+## Code Structure
+
+### Classes
+
+{% if classes %}
+{% for cls in classes|sort(attribute='name') %}
+#### `{{ cls.name }}`
+
+**Lines:** {{ cls.line_start }}-{{ cls.line_end }}  
+{% if cls.decorators %}
+**Decorators:** {{ cls.decorators|join(', ') }}  
+{% endif %}
+{% if cls.parameters %}
+**Base Classes:** {{ cls.parameters|join(', ') }}  
+{% endif %}
+
+{% if cls.docstring %}
+```
+{{ cls.docstring }}
+```
+{% endif %}
+
+{% endfor %}
+{% else %}
+No classes defined in this file.
+{% endif %}
+
+### Functions
+
+{% if functions %}
+{% for func in functions|sort(attribute='name') %}
+#### `{{ func.name }}({{ func.parameters|join(', ') }})`
+
+**Lines:** {{ func.line_start }}-{{ func.line_end }}  
+**Complexity:** {{ func.complexity|format_complexity }}  
+{% if func.is_async %}
+**Type:** Async Function  
+{% endif %}
+{% if func.decorators %}
+**Decorators:** {{ func.decorators|join(', ') }}  
+{% endif %}
+{% if func.return_type %}
+**Returns:** `{{ func.return_type }}`  
+{% endif %}
+
+{% if func.docstring %}
+```
+{{ func.docstring }}
+```
+{% endif %}
+
+{% endfor %}
+{% else %}
+No functions defined in this file.
+{% endif %}
+
+### Methods
+
+{% if methods %}
+{% for method in methods|sort(attribute='name') %}
+#### `{{ method.name }}({{ method.parameters|join(', ') }})`
+
+**Lines:** {{ method.line_start }}-{{ method.line_end }}  
+**Complexity:** {{ method.complexity|format_complexity }}  
+{% if method.parent %}
+**Parent Class:** `{{ method.parent }}`  
+{% endif %}
+{% if method.is_async %}
+**Type:** Async Method  
+{% endif %}
+{% if method.decorators %}
+**Decorators:** {{ method.decorators|join(', ') }}  
+{% endif %}
+
+{% if method.docstring %}
+```
+{{ method.docstring }}
+```
+{% endif %}
+
+{% endfor %}
+{% else %}
+No methods defined in this file.
+{% endif %}
+
+---
+
+## Public API
+
+{% if public_api %}
+This file exposes the following public API:
+
+{% for element in public_api|sort(attribute='name') %}
+- **`{{ element.name }}`** ({{ element.type }})
+  {% if element.docstring %}
+  - {{ element.docstring.split('\n')[0] }}
+  {% endif %}
+{% endfor %}
+{% else %}
+No public API elements defined.
+{% endif %}
+
+---
+
+## Imports
+
+{% if file.imports %}
+### Internal Imports
+
+{% set internal_imports = [] %}
+{% set external_imports = [] %}
+{% for import in file.imports %}
+{% if import.is_relative %}
+{% set _ = internal_imports.append(import) %}
+{% else %}
+{% set _ = external_imports.append(import) %}
+{% endif %}
+{% endfor %}
+
+{% if internal_imports %}
+{% for import in internal_imports|sort(attribute='module') %}
+- `{{ import.module }}`{% if import.names %} ({{ import.names|join(', ') }}){% endif %}
+{% endfor %}
+{% else %}
+No internal imports.
+{% endif %}
+
+### External Imports
+
+{% if external_imports %}
+{% for import in external_imports|sort(attribute='module') %}
+- `{{ import.module }}`{% if import.names %} ({{ import.names|join(', ') }}){% endif %}
+{% endfor %}
+{% else %}
+No external imports.
+{% endif %}
+
+{% else %}
+No imports in this file.
+{% endif %}
+
+---
+
+## Dependencies
+
+{% if file.dependencies %}
+This file depends on the following external packages:
+
+{% for dep in file.dependencies|sort %}
+- `{{ dep }}`
+{% endfor %}
+{% else %}
+No external dependencies detected.
+{% endif %}
+
+{% if file.internal_dependencies %}
+### Internal File Dependencies
+
+{% for dep in file.internal_dependencies|sort %}
+- `{{ dep }}`
+{% endfor %}
+{% endif %}
+
+---
+
+## Language Features
+
+{% if file.language_features %}
+This file uses the following language features:
+
+{% for feature, used in file.language_features.items()|sort %}
+{% if used %}
+- {{ feature.replace('_', ' ').title() }}
+{% endif %}
+{% endfor %}
+{% else %}
+No specific language features detected.
+{% endif %}
+
+---
+
+## Detected Frameworks
+
+{% if file.frameworks_detected %}
+{% for framework in file.frameworks_detected|sort %}
+- {{ framework }}
+{% endfor %}
+{% else %}
+No frameworks detected in this file.
+{% endif %}
+
+---
+
+## Warnings and Errors
+
+{% if file.parse_errors %}
+### Parse Errors
+
+{% for error in file.parse_errors %}
+- {{ error }}
+{% endfor %}
+{% endif %}
+
+{% if file.warnings %}
+### Warnings
+
+{% for warning in file.warnings %}
+- {{ warning }}
+{% endfor %}
+{% endif %}
+
+{% if not file.parse_errors and not file.warnings %}
+No errors or warnings.
+{% endif %}
+
+---
+
+## Notes for AI Assistants
+
+When working with this file:
+
+1. Review the code structure and understand the purpose of each component
+2. Check dependencies before making changes
+3. Maintain consistency with existing code style
+4. Update docstrings when modifying functions or classes
+5. Run tests after making changes
+
+{% if file.metrics.complexity > 50 %}
+**Warning:** This file has high complexity ({{ file.metrics.complexity }}). Consider refactoring to improve maintainability.
+{% endif %}
+
+{% if file.metrics.lines_of_code > 500 %}
+**Note:** This is a large file ({{ file.metrics.lines_of_code }} lines). Consider splitting into smaller modules if appropriate.
+{% endif %}
+
+---
+
+*Generated by Codebase Analyzer*
