@@ -21,3 +21,9 @@ Format:
 Order: newest lessons at the bottom (append-only).
 
 ---
+
+### Phase completion requires return-value and artifact smoke checks
+- **What happened:** Bob's Phase 3 stabilization pass claimed completion while `AnalysisOrchestrator.analyze_project()` no longer returned a `Project` and API reference documentation was not part of the generated documentation set.
+- **The mistake:** Completion was accepted without a smoke test that exercised the public orchestration path and checked the generated documentation artifacts.
+- **How it was solved:** A focused smoke test was added for a tiny fixture project, including duplicate basenames, `Project` return validation, and checks for overview, API reference, index, functionality group, and per-file documentation.
+- **Lesson:** Phase stabilization needs a small end-to-end smoke test that proves the public API return value and required output files before completion is recorded.

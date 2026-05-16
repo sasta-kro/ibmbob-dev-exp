@@ -110,21 +110,20 @@ No public API elements found in the project.
 
 ### By Type
 
-{% set functions_count = 0 %}
-{% set classes_count = 0 %}
+{% set ns = namespace(functions_count=0, classes_count=0) %}
 {% for item in api_elements %}
 {% for element in item.elements %}
 {% if element.type == 'function' %}
-{% set functions_count = functions_count + 1 %}
+{% set ns.functions_count = ns.functions_count + 1 %}
 {% elif element.type == 'class' %}
-{% set classes_count = classes_count + 1 %}
+{% set ns.classes_count = ns.classes_count + 1 %}
 {% endif %}
 {% endfor %}
 {% endfor %}
 
-- **Functions:** {{ functions_count }}
-- **Classes:** {{ classes_count }}
-- **Total:** {{ functions_count + classes_count }}
+- **Functions:** {{ ns.functions_count }}
+- **Classes:** {{ ns.classes_count }}
+- **Total:** {{ ns.functions_count + ns.classes_count }}
 
 ---
 

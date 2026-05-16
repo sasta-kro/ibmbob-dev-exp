@@ -244,7 +244,7 @@ class FunctionalityGrouper:
         dir_groups: Dict[str, List[FileInfo]],
         pattern_groups: Dict[str, List[FileInfo]],
         dependency_graph: Dict[str, Set[str]]
-    ) -> Dict[str, Set[FileInfo]]:
+    ) -> Dict[str, List[FileInfo]]:
         """
         Merge different grouping strategies into final groups.
         
@@ -254,28 +254,36 @@ class FunctionalityGrouper:
             dependency_graph: File dependency relationships
             
         Returns:
-            Merged groups
+            Merged groups with lists of FileInfo objects
         """
-        merged = defaultdict(set)
+        merged = defaultdict(list)
+        
+        # Track which files have been grouped using file paths
+        grouped_file_paths = set()
         
         # Start with pattern groups (higher priority)
         for group_name, files in pattern_groups.items():
-            merged[group_name].update(files)
+            for file_info in files:
+                file_path = str(file_info.relative_path)
+                if file_path not in grouped_file_paths:
+                    merged[group_name].append(file_info)
+                    grouped_file_paths.add(file_path)
         
         # Add directory groups for files not yet grouped
-        grouped_files = set()
-        for files in merged.values():
-            grouped_files.update(files)
-        
         for dir_name, files in dir_groups.items():
-            ungrouped = [f for f in files if f not in grouped_files]
+            ungrouped = []
+            for file_info in files:
+                file_path = str(file_info.relative_path)
+                if file_path not in grouped_file_paths:
+                    ungrouped.append(file_info)
+                    grouped_file_paths.add(file_path)
+            
             if ungrouped:
                 # Use directory name as group name
                 group_name = self._normalize_group_name(dir_name)
-                merged[group_name].update(ungrouped)
+                merged[group_name].extend(ungrouped)
         
-        # Convert sets back to lists
-        return {k: set(v) for k, v in merged.items()}
+        return dict(merged)
     
     def _normalize_group_name(self, name: str) -> str:
         """
@@ -303,7 +311,7 @@ class FunctionalityGrouper:
     
     def _create_functionality_groups(
         self,
-        groups: Dict[str, Set[FileInfo]],
+        groups: Dict[str, List[FileInfo]],
         all_files: List[FileInfo],
         dependency_graph: Dict[str, Set[str]]
     ) -> List[FunctionalityGroup]:
@@ -311,7 +319,7 @@ class FunctionalityGrouper:
         Create FunctionalityGroup objects from grouped files.
         
         Args:
-            groups: Merged file groups
+            groups: Merged file groups (dict of group_id to list of FileInfo)
             all_files: All files in the project
             dependency_graph: File dependencies
             
@@ -422,7 +430,7 @@ class FunctionalityGrouper:
     def _find_group_dependencies(
         self,
         files: List[FileInfo],
-        all_groups: Dict[str, Set[FileInfo]],
+        all_groups: Dict[str, List[FileInfo]],
         dependency_graph: Dict[str, Set[str]]
     ) -> List[str]:
         """Find dependencies between functionality groups."""

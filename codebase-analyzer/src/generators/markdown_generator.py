@@ -170,7 +170,9 @@ class MarkdownGenerator:
                 file_info,
                 files_dir
             )
-            generated_files[f'file_{file_info.name}'] = file_path
+            # Use relative path as key to avoid duplicate filename collisions
+            file_key = f'file_{str(file_info.relative_path).replace("/", "_").replace("\\", "_")}'
+            generated_files[file_key] = file_path
         
         logger.info(f"Generated {len(generated_files)} documentation files")
         return generated_files

@@ -14,6 +14,8 @@ from .analyzer import AnalyzerEngine
 from .grouper import FunctionalityGrouper
 from ..services.watson_service import WatsonService
 from ..services.cache_service import CacheService
+from ..generators.markdown_generator import MarkdownGenerator
+from ..generators.index_generator import IndexGenerator
 from ..models.project import Project
 from ..models.file_info import FileInfo
 from ..models.functionality import FunctionalityGroup, FunctionalityMap
@@ -53,6 +55,10 @@ class AnalysisOrchestrator:
         # Initialize services
         self.watson_service = WatsonService(config)
         self.cache_service = CacheService(config)
+        
+        # Initialize generators
+        self.markdown_generator = MarkdownGenerator(config)
+        self.index_generator = IndexGenerator()
         
         # Progress tracking
         self.progress_callback: Optional[Callable[[str, int, int], None]] = None
@@ -149,8 +155,47 @@ class AnalysisOrchestrator:
         
         logger.info(f"Project analysis completed in {duration:.2f} seconds")
         self._update_progress("Analysis complete!", 100, 100)
-        
         return project
+        
+    
+    def generate_documentation(
+        self,
+        project: Project,
+        output_dir: Optional[str] = None
+    ) -> Path:
+        """
+        Generate documentation for the analyzed project.
+        
+        Args:
+            project: Analyzed project object
+            output_dir: Optional output directory path (defaults to './docs')
+            
+        Returns:
+            Path to generated documentation directory
+        """
+        logger.info("Starting documentation generation")
+        
+        # Use default output directory if not specified
+        if output_dir is None:
+            output_dir = './docs'
+        
+        output_path = Path(output_dir)
+        output_path.mkdir(parents=True, exist_ok=True)
+        
+        # Generate markdown documentation
+        doc_files = self.markdown_generator.generate_project_documentation(project, output_path)
+        api_reference_path = self.markdown_generator.generate_api_reference(
+            project,
+            output_path / 'API_REFERENCE.md'
+        )
+        doc_files['api_reference'] = api_reference_path
+        
+        # Generate index file
+        index_path = output_path / 'INDEX.md'
+        self.index_generator.generate_index(project, doc_files, index_path)
+        
+        logger.info(f"Documentation generated at: {output_path}")
+        return output_path
     
     def _analyze_files(
         self,

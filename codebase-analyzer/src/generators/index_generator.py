@@ -118,20 +118,27 @@ class IndexGenerator:
         lines.append("## Table of Contents")
         lines.append("")
         
+        table_of_contents = []
+        
         # Project Overview Link
         if 'overview' in doc_files:
             rel_path = self._get_relative_path(doc_files['overview'], output_path.parent)
-            lines.append(f"1. [Project Overview]({rel_path})")
+            table_of_contents.append(f"[Project Overview]({rel_path})")
         
         # Functionality Groups
         if project.functionality_map and project.functionality_map.groups:
-            lines.append("2. [Functionality Groups](#functionality-groups)")
-            
-            # API Reference
-            lines.append("3. [API Reference](#api-reference)")
-            
-            # File Documentation
-            lines.append("4. [File Documentation](#file-documentation)")
+            table_of_contents.append("[Functionality Groups](#functionality-groups)")
+        
+        if 'api_reference' in doc_files:
+            rel_path = self._get_relative_path(doc_files['api_reference'], output_path.parent)
+            table_of_contents.append(f"[API Reference]({rel_path})")
+        else:
+            table_of_contents.append("[API Reference](#api-reference)")
+        
+        table_of_contents.append("[File Documentation](#file-documentation)")
+        
+        for index, entry in enumerate(table_of_contents, 1):
+            lines.append(f"{index}. {entry}")
         
         lines.append("")
         
@@ -185,7 +192,14 @@ class IndexGenerator:
         # API Reference Section
         lines.append("## API Reference")
         lines.append("")
-        lines.append("Public API documentation for the project.")
+        if 'api_reference' in doc_files:
+            rel_path = self._get_relative_path(
+                doc_files['api_reference'],
+                output_path.parent
+            )
+            lines.append(f"[Public API documentation]({rel_path}) for the project.")
+        else:
+            lines.append("Public API documentation for the project.")
         lines.append("")
         
         # File Documentation Section
@@ -202,7 +216,8 @@ class IndexGenerator:
             lines.append("")
             
             for file_info in sorted(files, key=lambda f: f.name):
-                file_key = f'file_{file_info.name}'
+                # Use relative path as key to match markdown_generator
+                file_key = f'file_{str(file_info.relative_path).replace("/", "_").replace("\\", "_")}'
                 if file_key in doc_files:
                     rel_path = self._get_relative_path(
                         doc_files[file_key],
