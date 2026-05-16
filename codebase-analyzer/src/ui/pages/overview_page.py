@@ -48,7 +48,7 @@ class OverviewPage(ft.Container):
             return ft.Column(
                 controls=[
                     create_empty_state(
-                        icon=ft.icons.ANALYTICS,
+                        icon=ft.Icons.ANALYTICS,
                         title="No Project Loaded",
                         description="Start a new analysis to see project overview"
                     )
@@ -79,7 +79,7 @@ class OverviewPage(ft.Container):
                     expand=True
                 ),
                 ft.IconButton(
-                    icon=ft.icons.REFRESH,
+                    icon=ft.Icons.REFRESH,
                     tooltip="Re-analyze",
                     icon_size=24
                 )
@@ -87,13 +87,8 @@ class OverviewPage(ft.Container):
             alignment=ft.MainAxisAlignment.SPACE_BETWEEN
         )
         
-        # Metric cards
         metrics_row = self._build_metrics_section()
-        
-        # Charts section
         charts_section = self._build_charts_section()
-        
-        # Quick actions
         actions_section = self._build_actions_section()
         
         return ft.Column(
@@ -113,19 +108,20 @@ class OverviewPage(ft.Container):
     
     def _build_metrics_section(self) -> ft.Row:
         """Build metrics cards section"""
-        # Calculate metrics
         total_files = len(self.project.files)
         total_findings = len(self.project.findings) if self.project.findings else 0
         total_suggestions = len(self.project.suggestions) if self.project.suggestions else 0
-        functionality_groups = len(self.project.functionality_groups) if self.project.functionality_groups else 0
+        functionality_groups = (
+            len(self.project.functionality_map.groups)
+            if self.project.functionality_map
+            else 0
+        )
         
-        # Count critical findings
         critical_findings = sum(
             1 for f in (self.project.findings or [])
             if f.severity.value == "critical"
         )
         
-        # Count high priority suggestions
         high_priority_suggestions = sum(
             1 for s in (self.project.suggestions or [])
             if s.priority_score >= 70
@@ -135,28 +131,28 @@ class OverviewPage(ft.Container):
             MetricCard(
                 title="Total Files",
                 value=format_number(total_files),
-                icon=ft.icons.FOLDER,
+                icon=ft.Icons.FOLDER,
                 color=AppTheme.PRIMARY,
                 subtitle=f"{functionality_groups} functionality groups"
             ),
             MetricCard(
                 title="Code Findings",
                 value=format_number(total_findings),
-                icon=ft.icons.BUG_REPORT,
+                icon=ft.Icons.BUG_REPORT,
                 color=AppTheme.ERROR if critical_findings > 0 else AppTheme.WARNING,
                 subtitle=f"{critical_findings} critical"
             ),
             MetricCard(
                 title="Suggestions",
                 value=format_number(total_suggestions),
-                icon=ft.icons.LIGHTBULB,
+                icon=ft.Icons.LIGHTBULB,
                 color=AppTheme.SUCCESS,
                 subtitle=f"{high_priority_suggestions} high priority"
             ),
             MetricCard(
                 title="Languages",
-                value=str(len(self.project.metadata.get("languages", {}))),
-                icon=ft.icons.CODE,
+                value=str(len(self.project.metrics.languages)),
+                icon=ft.Icons.CODE,
                 color=AppTheme.SECONDARY
             )
         ]
@@ -171,11 +167,10 @@ class OverviewPage(ft.Container):
         """Build charts section"""
         charts = []
         
-        # Language distribution chart
-        if self.project.metadata.get("languages"):
+        if self.project.metrics.languages:
             lang_chart = PieChart(
                 title="Language Distribution",
-                data=self.project.metadata["languages"],
+                data=self.project.metrics.languages,
                 colors={
                     "Python": AppTheme.PRIMARY,
                     "JavaScript": "#F7DF1E",
@@ -191,7 +186,6 @@ class OverviewPage(ft.Container):
                 )
             )
         
-        # Findings by severity chart
         if self.project.findings:
             severity_counts = {}
             for finding in self.project.findings:
@@ -210,21 +204,20 @@ class OverviewPage(ft.Container):
                 )
             )
         
-        # Findings by category chart
         if self.project.findings:
-            category_counts = {}
+            type_counts = {}
             for finding in self.project.findings:
-                category = finding.category.value
-                category_counts[category] = category_counts.get(category, 0) + 1
+                finding_type = finding.finding_type.value
+                type_counts[finding_type] = type_counts.get(finding_type, 0) + 1
             
-            category_chart = BarChart(
-                title="Findings by Category",
-                data=category_counts,
+            type_chart = BarChart(
+                title="Findings by Type",
+                data=type_counts,
                 color=AppTheme.WARNING
             )
             charts.append(
                 ft.Card(
-                    content=category_chart,
+                    content=type_chart,
                     elevation=2
                 )
             )
@@ -259,16 +252,18 @@ class OverviewPage(ft.Container):
                 ft.ElevatedButton(
                     content=ft.Row(
                         controls=[
-                            ft.Icon(ft.icons.DESCRIPTION),
+                            ft.Icon(ft.Icons.DESCRIPTION),
                             ft.Text("View Documentation")
                         ],
                         spacing=8
                     ),
                     on_click=lambda _: self.on_view_docs(),
                     style=ft.ButtonStyle(
-                        padding=ft.padding.symmetric(
-                            horizontal=AppTheme.SPACING_LARGE,
-                            vertical=AppTheme.SPACING_MEDIUM
+                        padding=ft.Padding(
+                            left=AppTheme.SPACING_LARGE,
+                            right=AppTheme.SPACING_LARGE,
+                            top=AppTheme.SPACING_MEDIUM,
+                            bottom=AppTheme.SPACING_MEDIUM
                         )
                     )
                 )
@@ -279,16 +274,18 @@ class OverviewPage(ft.Container):
                 ft.ElevatedButton(
                     content=ft.Row(
                         controls=[
-                            ft.Icon(ft.icons.BUG_REPORT),
+                            ft.Icon(ft.Icons.BUG_REPORT),
                             ft.Text("View Findings")
                         ],
                         spacing=8
                     ),
                     on_click=lambda _: self.on_view_findings(),
                     style=ft.ButtonStyle(
-                        padding=ft.padding.symmetric(
-                            horizontal=AppTheme.SPACING_LARGE,
-                            vertical=AppTheme.SPACING_MEDIUM
+                        padding=ft.Padding(
+                            left=AppTheme.SPACING_LARGE,
+                            right=AppTheme.SPACING_LARGE,
+                            top=AppTheme.SPACING_MEDIUM,
+                            bottom=AppTheme.SPACING_MEDIUM
                         )
                     )
                 )
@@ -299,16 +296,18 @@ class OverviewPage(ft.Container):
                 ft.ElevatedButton(
                     content=ft.Row(
                         controls=[
-                            ft.Icon(ft.icons.LIGHTBULB),
+                            ft.Icon(ft.Icons.LIGHTBULB),
                             ft.Text("View Suggestions")
                         ],
                         spacing=8
                     ),
                     on_click=lambda _: self.on_view_suggestions(),
                     style=ft.ButtonStyle(
-                        padding=ft.padding.symmetric(
-                            horizontal=AppTheme.SPACING_LARGE,
-                            vertical=AppTheme.SPACING_MEDIUM
+                        padding=ft.Padding(
+                            left=AppTheme.SPACING_LARGE,
+                            right=AppTheme.SPACING_LARGE,
+                            top=AppTheme.SPACING_MEDIUM,
+                            bottom=AppTheme.SPACING_MEDIUM
                         )
                     )
                 )

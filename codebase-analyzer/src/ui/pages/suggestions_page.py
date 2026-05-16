@@ -46,7 +46,7 @@ class SuggestionsPage(ft.Container):
             return ft.Row(
                 controls=[
                     create_empty_state(
-                        icon=ft.icons.LIGHTBULB_OUTLINE,
+                        icon=ft.Icons.LIGHTBULB_OUTLINE,
                         title="No Suggestions",
                         description="No improvement suggestions available"
                     )
@@ -122,7 +122,7 @@ class SuggestionsPage(ft.Container):
                         controls=[
                             ft.Row(
                                 controls=[
-                                    ft.Icon(ft.icons.FLASH_ON, color=AppTheme.SUCCESS),
+                                    ft.Icon(ft.Icons.FLASH_ON, color=AppTheme.SUCCESS),
                                     ft.Text(
                                         f"Quick Wins ({len(quick_wins)})",
                                         size=AppTheme.FONT_SIZE_LARGE,
@@ -140,16 +140,16 @@ class SuggestionsPage(ft.Container):
                         ],
                         spacing=4
                     ),
-                    padding=ft.padding.only(bottom=AppTheme.SPACING_MEDIUM)
+                    padding=ft.Padding(bottom=AppTheme.SPACING_MEDIUM)
                 )
             )
         
         # Suggestions cards
         if not self.filtered_suggestions:
             suggestions_content = create_empty_state(
-                icon=ft.icons.FILTER_ALT_OFF,
+                icon=ft.Icons.FILTER_ALT_OFF,
                 title="No Matching Suggestions",
-                description="Try adjusting your filters"
+                description="Adjust filters to broaden the result set"
             )
         else:
             suggestion_cards = [

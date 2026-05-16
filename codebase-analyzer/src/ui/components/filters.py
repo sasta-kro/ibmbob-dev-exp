@@ -38,7 +38,7 @@ class FilterPanel(ft.Container):
         super().__init__(
             content=self._build_content(),
             bgcolor=AppTheme.BG_CARD,
-            border=ft.border.all(1, AppTheme.BORDER_COLOR),
+            border=ft.Border.all(1, AppTheme.BORDER_COLOR),
             border_radius=AppTheme.RADIUS_MEDIUM,
             padding=16
         )
@@ -51,7 +51,7 @@ class FilterPanel(ft.Container):
         if self.search_enabled:
             search_box = ft.TextField(
                 label="Search",
-                prefix_icon=ft.icons.SEARCH,
+                prefix_icon=ft.Icons.SEARCH,
                 on_change=self._on_search_change,
                 dense=True,
                 border_color=AppTheme.BORDER_COLOR
@@ -68,7 +68,7 @@ class FilterPanel(ft.Container):
         # Clear filters button
         clear_button = ft.TextButton(
             "Clear All Filters",
-            icon=ft.icons.CLEAR,
+            icon=ft.Icons.CLEAR,
             on_click=self._clear_filters
         )
         controls.append(clear_button)
@@ -126,7 +126,7 @@ class FilterPanel(ft.Container):
                                 color=AppTheme.TEXT_ON_PRIMARY
                             ),
                             ft.IconButton(
-                                icon=ft.icons.CLOSE,
+                                icon=ft.Icons.CLOSE,
                                 icon_size=14,
                                 icon_color=AppTheme.TEXT_ON_PRIMARY,
                                 on_click=lambda e, n=filter_name, v=value: self._remove_filter(n, v)
@@ -136,7 +136,7 @@ class FilterPanel(ft.Container):
                     ),
                     bgcolor=AppTheme.PRIMARY,
                     border_radius=16,
-                    padding=ft.padding.symmetric(horizontal=8, vertical=4)
+                    padding=ft.Padding(left=8, right=8, top=4, bottom=4)
                 )
                 chips.append(chip)
         
@@ -217,13 +217,13 @@ class SortControl(ft.Container):
         dropdown = ft.Dropdown(
             options=[ft.dropdown.Option(opt) for opt in self.options],
             value=self.current_option,
-            on_change=self._on_option_change,
+            on_select=self._on_option_change,
             dense=True,
             width=200
         )
         
         direction_button = ft.IconButton(
-            icon=ft.icons.ARROW_UPWARD if self.ascending else ft.icons.ARROW_DOWNWARD,
+            icon=ft.Icons.ARROW_UPWARD if self.ascending else ft.Icons.ARROW_DOWNWARD,
             tooltip="Sort Direction",
             on_click=self._toggle_direction
         )
@@ -280,7 +280,7 @@ class SearchBar(ft.Container):
         """Build search bar content"""
         return ft.TextField(
             label=self.placeholder,
-            prefix_icon=ft.icons.SEARCH,
+            prefix_icon=ft.Icons.SEARCH,
             on_change=lambda e: self.on_search(e.control.value),
             dense=True,
             border_color=AppTheme.BORDER_COLOR,

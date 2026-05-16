@@ -47,14 +47,14 @@ class HomePage(ft.Container):
                         color=AppTheme.PRIMARY
                     ),
                     ft.Text(
-                        "Analyze, document, and improve your codebase",
+                        "Analyze, document, and improve a codebase",
                         size=AppTheme.FONT_SIZE_LARGE,
                         color=AppTheme.TEXT_SECONDARY
                     )
                 ],
                 spacing=8
             ),
-            padding=ft.padding.only(bottom=AppTheme.SPACING_XLARGE)
+            padding=ft.Padding(bottom=AppTheme.SPACING_XLARGE)
         )
         
         # New analysis button
@@ -62,7 +62,7 @@ class HomePage(ft.Container):
             content=ft.ElevatedButton(
                 content=ft.Row(
                     controls=[
-                        ft.Icon(ft.icons.ADD_CIRCLE_OUTLINE, size=24),
+                        ft.Icon(ft.Icons.ADD_CIRCLE_OUTLINE, size=24),
                         ft.Text(
                             "Start New Analysis",
                             size=AppTheme.FONT_SIZE_LARGE,
@@ -74,17 +74,19 @@ class HomePage(ft.Container):
                 ),
                 on_click=lambda _: self.on_new_analysis(),
                 style=ft.ButtonStyle(
-                    padding=ft.padding.symmetric(
-                        horizontal=AppTheme.SPACING_XLARGE,
-                        vertical=AppTheme.SPACING_LARGE
+                    padding=ft.Padding(
+                        left=AppTheme.SPACING_XLARGE,
+                        right=AppTheme.SPACING_XLARGE,
+                        top=AppTheme.SPACING_LARGE,
+                        bottom=AppTheme.SPACING_LARGE
                     ),
                     bgcolor=AppTheme.PRIMARY,
                     color=AppTheme.TEXT_ON_PRIMARY
                 ),
                 height=80
             ),
-            alignment=ft.alignment.center,
-            padding=ft.padding.only(bottom=AppTheme.SPACING_XLARGE)
+            alignment=ft.Alignment(0, 0),
+            padding=ft.Padding(bottom=AppTheme.SPACING_XLARGE)
         )
         
         controls = [header, new_analysis_button]
@@ -117,7 +119,7 @@ class HomePage(ft.Container):
                             ft.Row(
                                 controls=[
                                     ft.Icon(
-                                        ft.icons.FOLDER,
+                                        ft.Icons.FOLDER,
                                         size=32,
                                         color=AppTheme.PRIMARY
                                     ),
@@ -138,7 +140,7 @@ class HomePage(ft.Container):
                                         expand=True
                                     ),
                                     ft.IconButton(
-                                        icon=ft.icons.ARROW_FORWARD,
+                                        icon=ft.Icons.ARROW_FORWARD,
                                         tooltip="Open Project",
                                         on_click=lambda _, p=project: self._open_project(p)
                                     )
@@ -192,41 +194,44 @@ class HomePage(ft.Container):
                 ],
                 spacing=0
             ),
-            padding=ft.padding.only(bottom=AppTheme.SPACING_XLARGE)
+            padding=ft.Padding(bottom=AppTheme.SPACING_XLARGE)
         )
     
     def _build_empty_state(self) -> ft.Container:
         """Build empty state when no recent projects"""
         return ft.Container(
             content=create_empty_state(
-                icon=ft.icons.FOLDER_OPEN,
+                icon=ft.Icons.FOLDER_OPEN,
                 title="No Recent Projects",
-                description="Start a new analysis to see your projects here"
+                description="Start a new analysis to show recent projects"
             ),
-            padding=ft.padding.symmetric(vertical=AppTheme.SPACING_XLARGE),
-            alignment=ft.alignment.center
+            padding=ft.Padding(
+                top=AppTheme.SPACING_XLARGE,
+                bottom=AppTheme.SPACING_XLARGE
+            ),
+            alignment=ft.Alignment(0, 0)
         )
     
     def _build_features_section(self) -> ft.Container:
         """Build features showcase section"""
         features = [
             {
-                "icon": ft.icons.SEARCH,
+                "icon": ft.Icons.SEARCH,
                 "title": "Code Analysis",
-                "description": "Deep analysis of your codebase structure and patterns"
+                "description": "Deep analysis of codebase structure and patterns"
             },
             {
-                "icon": ft.icons.DESCRIPTION,
+                "icon": ft.Icons.DESCRIPTION,
                 "title": "Documentation",
                 "description": "Auto-generate comprehensive documentation"
             },
             {
-                "icon": ft.icons.BUG_REPORT,
+                "icon": ft.Icons.BUG_REPORT,
                 "title": "Code Review",
                 "description": "Identify bugs, security issues, and improvements"
             },
             {
-                "icon": ft.icons.LIGHTBULB,
+                "icon": ft.Icons.LIGHTBULB,
                 "title": "Suggestions",
                 "description": "Get actionable improvement recommendations"
             }
@@ -285,7 +290,7 @@ class HomePage(ft.Container):
                 ],
                 spacing=0
             ),
-            padding=ft.padding.only(top=AppTheme.SPACING_XLARGE)
+            padding=ft.Padding(top=AppTheme.SPACING_XLARGE)
         )
     
     def _open_project(self, project: dict):

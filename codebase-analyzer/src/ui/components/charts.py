@@ -157,8 +157,8 @@ class BarChart(ft.Container):
                                 width=bar_width * 2,
                                 height=24,
                                 border_radius=4,
-                                padding=ft.padding.symmetric(horizontal=8),
-                                alignment=ft.alignment.center_left
+                                padding=ft.Padding(left=8, right=8),
+                                alignment=ft.Alignment(-1, 0)
                             )
                         ],
                         spacing=8
@@ -254,9 +254,9 @@ class MetricCard(ft.Card):
             bottom_controls = []
             
             if self.trend:
-                trend_icon = ft.icons.TRENDING_UP if self.trend == "up" else \
-                            ft.icons.TRENDING_DOWN if self.trend == "down" else \
-                            ft.icons.TRENDING_FLAT
+                trend_icon = ft.Icons.TRENDING_UP if self.trend == "up" else \
+                            ft.Icons.TRENDING_DOWN if self.trend == "down" else \
+                            ft.Icons.TRENDING_FLAT
                 trend_color = AppTheme.SUCCESS if self.trend == "up" else \
                              AppTheme.ERROR if self.trend == "down" else \
                              AppTheme.TEXT_SECONDARY
@@ -352,7 +352,7 @@ class ProgressRing(ft.Container):
                     horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                     spacing=0
                 ),
-                alignment=ft.alignment.center
+                alignment=ft.Alignment(0, 0)
             )
         ]
         

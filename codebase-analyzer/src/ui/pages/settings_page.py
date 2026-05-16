@@ -162,11 +162,11 @@ class SettingsPage(ft.Container):
                         ft.Container(height=8),
                         ft.TextButton(
                             "View Documentation",
-                            icon=ft.icons.OPEN_IN_NEW
+                            icon=ft.Icons.OPEN_IN_NEW
                         ),
                         ft.TextButton(
                             "Report an Issue",
-                            icon=ft.icons.BUG_REPORT
+                            icon=ft.Icons.BUG_REPORT
                         )
                     ],
                     spacing=8
@@ -180,16 +180,18 @@ class SettingsPage(ft.Container):
         save_button = ft.ElevatedButton(
             content=ft.Row(
                 controls=[
-                    ft.Icon(ft.icons.SAVE),
+                    ft.Icon(ft.Icons.SAVE),
                     ft.Text("Save Settings")
                 ],
                 spacing=8
             ),
             on_click=self._save_settings,
             style=ft.ButtonStyle(
-                padding=ft.padding.symmetric(
-                    horizontal=AppTheme.SPACING_LARGE,
-                    vertical=AppTheme.SPACING_MEDIUM
+                padding=ft.Padding(
+                    left=AppTheme.SPACING_LARGE,
+                    right=AppTheme.SPACING_LARGE,
+                    top=AppTheme.SPACING_MEDIUM,
+                    bottom=AppTheme.SPACING_MEDIUM
                 ),
                 bgcolor=AppTheme.PRIMARY,
                 color=AppTheme.TEXT_ON_PRIMARY

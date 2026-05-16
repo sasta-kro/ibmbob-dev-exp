@@ -5,7 +5,7 @@
 **Project Name:** Codebase Analyzer  
 **Type:** Python Desktop Application (Flet-based)  
 **Purpose:** AI-powered codebase analysis, documentation generation, code review, and improvement suggestions  
-**Current Phase:** Phase 5 Stabilized (Suggestion Engine) - Ready for Phase 6 first pass
+**Current Phase:** Phase 6 Stabilized (Dashboard UI) - Ready for Phase 7 first pass
 **Last Updated:** 2026-05-16
 
 ---
@@ -15,6 +15,7 @@
 - 2026-05-16: Bob's Phase 3 stabilization pass regressed `AnalysisOrchestrator.analyze_project()` by moving `return project` out of the method. The follow-up fix restored the return, removed the unreachable documentation return, connected API reference generation to the documentation flow, and added a smoke test for analysis plus documentation output. Phase 3 and Phase 4 smoke tests passed on 2026-05-16.
 - 2026-05-16: Bob's Phase 4 pass inserted `review_project()` inside `generate_documentation()`, causing documentation generation to skip `INDEX.md` and return `None`. The follow-up fix restored the documentation method boundary, kept review orchestration separate, connected review findings back to the `Project`, added `functionalityAreas` to review JSON output, fixed `FindingSummary` serialization, and corrected `AIReviewer` calls to match the existing `WatsonService.analyze_code()` signature. Phase 3 and Phase 4 smoke tests passed on 2026-05-16.
 - 2026-05-16: Bob's Phase 5 pass added the suggestion engine, but the smoke test used invalid `Project` constructor fields and did not prove `Project` state integration. The follow-up fix changed the test to use the real `Project` model contract, updated `AnalysisOrchestrator.generate_suggestions()` to store prioritized suggestions on `Project`, refreshed `Project.suggestion_summary`, and generated the roadmap from the same prioritized list. Phase 3, Phase 4, and Phase 5 smoke tests passed on 2026-05-16.
+- 2026-05-16: Bob's Phase 6 pass created the Flet UI, but it used non-existent finding model names and fields, skipped the required documentation browser, left folder selection as a no-op, and used old Flet helper APIs against Flet 0.85.1. The follow-up fix updated UI calls to the installed Flet API directly, added the documentation browser and route, connected scan execution to `AnalysisOrchestrator`, updated finding and suggestion status actions to mutate model state, and replaced the Phase 6 test with real model integration coverage. Phase 6 smoke tests passed on 2026-05-16.
 
 ---
 
@@ -184,7 +185,7 @@
 ### Areas for Enhancement
 1. **JavaScript/TypeScript Analysis:** Currently regex-based, could use proper AST parser (esprima/babel)
 2. **Test Coverage:** Phase smoke tests exist; broader unit and integration coverage remains scheduled for Phase 7
-3. **UI Components:** Not yet implemented (Phase 6)
+3. **UI Polish:** Phase 6 UI exists; async execution, persistence, and deprecation cleanup remain for Phase 7
 4. **HTML Documentation Export:** Markdown documentation exists; HTML export remains future work
 5. **Pydantic V2 Cleanup:** Models still use deprecated class-based config and `json_encoders`
 
@@ -286,16 +287,15 @@ Comprehensive default ignore list including:
 
 ---
 
-## Next Steps (Phase 6)
+## Next Steps (Phase 7)
 
-**Dashboard UI Implementation:**
-- Flet-based application shell
-- Overview page with project metrics
-- Documentation browser
-- Review findings page
-- Suggestions and roadmap page
-- Settings and configuration page
-- Visual filters for findings and suggestions
+**Testing and Polish:**
+- Expand unit and integration coverage
+- Add UI interaction tests where practical
+- Move long-running analysis off the main UI event path
+- Persist settings and recent project history
+- Replace deprecated Flet controls before Flet 1.0
+- Polish documentation and release readiness
 
 ---
 
@@ -317,12 +317,12 @@ Comprehensive default ignore list including:
 5. Test parallel processing edge cases
 
 ### Code Style Compliance
-- No em-dashes ✓
-- No emojis in code ✓
-- No personal pronouns in docs ✓
-- Descriptive names ✓
-- Self-documenting code ✓
-- Comments for 'why' not 'what' ✓
+- No em-dashes: compliant
+- No emojis in code: compliant
+- No personal pronouns in docs: compliant
+- Descriptive names: compliant
+- Self-documenting code: compliant
+- Comments for purpose, not restating behavior: compliant
 
 ---
 
@@ -435,3 +435,30 @@ Comprehensive default ignore list including:
 - `AnalysisOrchestrator.generate_suggestions()` initializes the Phase 5 flow
 - Prioritized suggestions are stored on `Project.suggestions`
 - `Project.suggestion_summary` is updated after generation
+
+### 8. Dashboard UI (`src/ui/`)
+
+**Application Shell (`app.py`):**
+- Flet navigation rail with Home, Scan, Overview, Documentation, Findings, Suggestions, and Settings pages
+- Folder selection through Flet `FilePicker`
+- Analysis orchestration from the scan page
+- Documentation, review, and suggestion generation options
+- Finding and suggestion action handlers update model state and summaries
+
+**Pages (`src/ui/pages/`):**
+- Home page with new analysis entry point and recent project shell
+- Scan page with selected paths, analysis options, progress stages, and cancel control
+- Overview page with project metrics and charts
+- Documentation page for generated Markdown files
+- Findings page with filtering, search, sorting, and finding cards
+- Suggestions page with filtering, search, sorting, and quick win display
+- Settings page with analysis and appearance controls
+
+**Components (`src/ui/components/`):**
+- Cards for findings, suggestions, and progress
+- Filter panel, search bar, and sort control
+- Chart and metric display components
+
+**Stabilization Notes:**
+- UI code now uses installed Flet 0.85.1 API names directly
+- Phase 6 smoke tests instantiate real `Project`, `Finding`, and `Suggestion` objects

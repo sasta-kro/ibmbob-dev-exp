@@ -15,20 +15,29 @@ class ScanPage(ft.Container):
     
     def __init__(
         self,
-        on_start_scan: Callable[[List[str]], None],
+        on_start_scan: Callable[[List[str], dict], None],
+        on_select_folder: Optional[Callable] = None,
         on_cancel: Optional[Callable] = None
     ):
         """
         Initialize scan page
         
         Args:
-            on_start_scan: Callback when scan starts (receives list of paths)
+            on_start_scan: Callback when scan starts
+            on_select_folder: Callback that opens a folder picker
             on_cancel: Callback to cancel scan
         """
         self.on_start_scan = on_start_scan
+        self.on_select_folder = on_select_folder
         self.on_cancel = on_cancel
         self.selected_paths: List[str] = []
         self.is_scanning = False
+        self.option_values = {
+            "enable_ai": True,
+            "generate_docs": True,
+            "perform_review": True,
+            "generate_suggestions": True
+        }
         self.progress_data = {
             "scanning": {"current": 0, "total": 0, "status": "Pending"},
             "analyzing": {"current": 0, "total": 0, "status": "Pending"},
@@ -70,7 +79,7 @@ class ScanPage(ft.Container):
                     ),
                     ft.Container(
                         content=self._build_paths_list(),
-                        border=ft.border.all(1, AppTheme.BORDER_COLOR),
+                        border=ft.Border.all(1, AppTheme.BORDER_COLOR),
                         border_radius=AppTheme.RADIUS_MEDIUM,
                         padding=AppTheme.SPACING_MEDIUM,
                         height=200
@@ -81,16 +90,16 @@ class ScanPage(ft.Container):
                             color=AppTheme.TEXT_SECONDARY,
                             italic=True
                         ),
-                        border=ft.border.all(1, AppTheme.BORDER_COLOR),
+                        border=ft.Border.all(1, AppTheme.BORDER_COLOR),
                         border_radius=AppTheme.RADIUS_MEDIUM,
                         padding=AppTheme.SPACING_MEDIUM,
                         height=200,
-                        alignment=ft.alignment.center
+                        alignment=ft.Alignment(0, 0)
                     )
                 ],
                 spacing=12
             ),
-            padding=ft.padding.only(bottom=AppTheme.SPACING_LARGE)
+            padding=ft.Padding(bottom=AppTheme.SPACING_LARGE)
         )
         
         # Action buttons
@@ -99,23 +108,25 @@ class ScanPage(ft.Container):
                 ft.ElevatedButton(
                     content=ft.Row(
                         controls=[
-                            ft.Icon(ft.icons.FOLDER_OPEN),
+                            ft.Icon(ft.Icons.FOLDER_OPEN),
                             ft.Text("Select Folder")
                         ],
                         spacing=8
                     ),
                     on_click=self._select_folder,
                     style=ft.ButtonStyle(
-                        padding=ft.padding.symmetric(
-                            horizontal=AppTheme.SPACING_LARGE,
-                            vertical=AppTheme.SPACING_MEDIUM
+                        padding=ft.Padding(
+                            left=AppTheme.SPACING_LARGE,
+                            right=AppTheme.SPACING_LARGE,
+                            top=AppTheme.SPACING_MEDIUM,
+                            bottom=AppTheme.SPACING_MEDIUM
                         )
                     )
                 ),
                 ft.ElevatedButton(
                     content=ft.Row(
                         controls=[
-                            ft.Icon(ft.icons.PLAY_ARROW),
+                            ft.Icon(ft.Icons.PLAY_ARROW),
                             ft.Text("Start Analysis")
                         ],
                         spacing=8
@@ -123,9 +134,11 @@ class ScanPage(ft.Container):
                     on_click=self._start_analysis,
                     disabled=len(self.selected_paths) == 0,
                     style=ft.ButtonStyle(
-                        padding=ft.padding.symmetric(
-                            horizontal=AppTheme.SPACING_LARGE,
-                            vertical=AppTheme.SPACING_MEDIUM
+                        padding=ft.Padding(
+                            left=AppTheme.SPACING_LARGE,
+                            right=AppTheme.SPACING_LARGE,
+                            top=AppTheme.SPACING_MEDIUM,
+                            bottom=AppTheme.SPACING_MEDIUM
                         ),
                         bgcolor=AppTheme.PRIMARY,
                         color=AppTheme.TEXT_ON_PRIMARY
@@ -146,24 +159,28 @@ class ScanPage(ft.Container):
                     ),
                     ft.Checkbox(
                         label="Enable AI-powered analysis",
-                        value=True
+                        value=self.option_values["enable_ai"],
+                        on_change=lambda e: self._update_option("enable_ai", e.control.value)
                     ),
                     ft.Checkbox(
                         label="Generate documentation",
-                        value=True
+                        value=self.option_values["generate_docs"],
+                        on_change=lambda e: self._update_option("generate_docs", e.control.value)
                     ),
                     ft.Checkbox(
                         label="Perform code review",
-                        value=True
+                        value=self.option_values["perform_review"],
+                        on_change=lambda e: self._update_option("perform_review", e.control.value)
                     ),
                     ft.Checkbox(
                         label="Generate improvement suggestions",
-                        value=True
+                        value=self.option_values["generate_suggestions"],
+                        on_change=lambda e: self._update_option("generate_suggestions", e.control.value)
                     )
                 ],
                 spacing=8
             ),
-            padding=ft.padding.only(top=AppTheme.SPACING_XLARGE)
+            padding=ft.Padding(top=AppTheme.SPACING_XLARGE)
         )
         
         return ft.Column(
@@ -192,7 +209,7 @@ class ScanPage(ft.Container):
                     expand=True
                 ),
                 ft.IconButton(
-                    icon=ft.icons.CANCEL,
+                    icon=ft.Icons.CANCEL,
                     tooltip="Cancel Analysis",
                     on_click=self._cancel_scan,
                     icon_color=AppTheme.ERROR
@@ -205,10 +222,10 @@ class ScanPage(ft.Container):
         progress_cards = []
         
         stages = [
-            ("scanning", "Scanning Files", ft.icons.SEARCH),
-            ("analyzing", "Analyzing Code", ft.icons.CODE),
-            ("documenting", "Generating Documentation", ft.icons.DESCRIPTION),
-            ("reviewing", "Reviewing Code", ft.icons.BUG_REPORT)
+            ("scanning", "Scanning Files", ft.Icons.SEARCH),
+            ("analyzing", "Analyzing Code", ft.Icons.CODE),
+            ("documenting", "Generating Documentation", ft.Icons.DESCRIPTION),
+            ("reviewing", "Reviewing Code", ft.Icons.BUG_REPORT)
         ]
         
         for stage_key, stage_title, stage_icon in stages:
@@ -243,7 +260,7 @@ class ScanPage(ft.Container):
                             spacing=4,
                             padding=AppTheme.SPACING_SMALL
                         ),
-                        border=ft.border.all(1, AppTheme.BORDER_COLOR),
+                        border=ft.Border.all(1, AppTheme.BORDER_COLOR),
                         border_radius=AppTheme.RADIUS_MEDIUM,
                         height=200,
                         bgcolor=AppTheme.BG_SECONDARY
@@ -251,7 +268,7 @@ class ScanPage(ft.Container):
                 ],
                 spacing=12
             ),
-            padding=ft.padding.only(top=AppTheme.SPACING_LARGE)
+            padding=ft.Padding(top=AppTheme.SPACING_LARGE)
         )
         
         return ft.Column(
@@ -275,14 +292,14 @@ class ScanPage(ft.Container):
         for path in self.selected_paths:
             item = ft.Row(
                 controls=[
-                    ft.Icon(ft.icons.FOLDER, size=20, color=AppTheme.PRIMARY),
+                    ft.Icon(ft.Icons.FOLDER, size=20, color=AppTheme.PRIMARY),
                     ft.Text(
                         path,
                         size=AppTheme.FONT_SIZE_NORMAL,
                         expand=True
                     ),
                     ft.IconButton(
-                        icon=ft.icons.CLOSE,
+                        icon=ft.Icons.CLOSE,
                         icon_size=16,
                         tooltip="Remove",
                         on_click=lambda _, p=path: self._remove_path(p)
@@ -300,9 +317,8 @@ class ScanPage(ft.Container):
     
     def _select_folder(self, e):
         """Open folder picker dialog"""
-        # This would open a file picker dialog
-        # For now, we'll simulate adding a path
-        pass
+        if self.on_select_folder:
+            self.on_select_folder()
     
     def _remove_path(self, path: str):
         """Remove a selected path"""
@@ -317,7 +333,7 @@ class ScanPage(ft.Container):
             self.is_scanning = True
             self.content = self._build_content()
             self.update()
-            self.on_start_scan(self.selected_paths)
+            self.on_start_scan(self.selected_paths, self.option_values.copy())
     
     def _cancel_scan(self, e):
         """Cancel the scan"""
@@ -344,6 +360,10 @@ class ScanPage(ft.Container):
             if self.is_scanning:
                 self.content = self._build_content()
                 self.update()
+    
+    def _update_option(self, key: str, value: bool):
+        """Update an analysis option."""
+        self.option_values[key] = value
     
     def add_path(self, path: str):
         """Add a path to selected paths"""

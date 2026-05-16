@@ -46,7 +46,7 @@ class FindingsPage(ft.Container):
             return ft.Row(
                 controls=[
                     create_empty_state(
-                        icon=ft.icons.CHECK_CIRCLE,
+                        icon=ft.Icons.CHECK_CIRCLE,
                         title="No Findings",
                         description="No code review findings to display"
                     )
@@ -58,7 +58,7 @@ class FindingsPage(ft.Container):
         # Filter panel
         filter_options = {
             "severity": ["critical", "high", "medium", "low", "info"],
-            "category": ["bug", "security", "performance", "style", "maintainability", "documentation"]
+            "type": ["bug", "security", "performance", "style", "maintainability", "documentation"]
         }
         
         filter_panel = FilterPanel(
@@ -111,9 +111,9 @@ class FindingsPage(ft.Container):
         # Findings cards
         if not self.filtered_findings:
             findings_content = create_empty_state(
-                icon=ft.icons.FILTER_ALT_OFF,
+                icon=ft.Icons.FILTER_ALT_OFF,
                 title="No Matching Findings",
-                description="Try adjusting your filters"
+                description="Adjust filters to broaden the result set"
             )
         else:
             finding_cards = [
@@ -146,18 +146,16 @@ class FindingsPage(ft.Container):
         """Handle filter changes"""
         self.filtered_findings = self.all_findings.copy()
         
-        # Apply severity filter
         if filters.get("severity"):
             self.filtered_findings = [
                 f for f in self.filtered_findings
                 if f.severity.value in filters["severity"]
             ]
         
-        # Apply category filter
-        if filters.get("category"):
+        if filters.get("type"):
             self.filtered_findings = [
                 f for f in self.filtered_findings
-                if f.category.value in filters["category"]
+                if f.finding_type.value in filters["type"]
             ]
         
         self.content = self._build_content()
@@ -173,7 +171,7 @@ class FindingsPage(ft.Container):
                 f for f in self.all_findings
                 if query_lower in f.title.lower() or
                    query_lower in f.description.lower() or
-                   query_lower in f.file_path.lower()
+                   query_lower in str(f.location.file_path).lower()
             ]
         
         self.content = self._build_content()
@@ -189,12 +187,12 @@ class FindingsPage(ft.Container):
             )
         elif option == "Category":
             self.filtered_findings.sort(
-                key=lambda f: f.category.value,
+                key=lambda f: f.finding_type.value,
                 reverse=not ascending
             )
         elif option == "File":
             self.filtered_findings.sort(
-                key=lambda f: f.file_path,
+                key=lambda f: str(f.location.file_path),
                 reverse=not ascending
             )
         

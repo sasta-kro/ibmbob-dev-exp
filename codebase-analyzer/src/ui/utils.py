@@ -73,7 +73,12 @@ def create_badge(
         ),
         bgcolor=color,
         border_radius=12,
-        padding=ft.padding.symmetric(horizontal=padding + 4, vertical=padding)
+        padding=ft.Padding(
+            left=padding + 4,
+            right=padding + 4,
+            top=padding,
+            bottom=padding
+        )
     )
 
 
@@ -148,10 +153,10 @@ def create_empty_state(
     if action_text and on_action:
         controls.append(
             ft.ElevatedButton(
-                text=action_text,
+                content=action_text,
                 on_click=on_action,
                 style=ft.ButtonStyle(
-                    padding=ft.padding.symmetric(horizontal=24, vertical=12)
+                    padding=ft.Padding(left=24, right=24, top=12, bottom=12)
                 )
             )
         )
@@ -169,7 +174,7 @@ def create_error_display(
 ) -> ft.Column:
     """Create an error display"""
     controls = [
-        ft.Icon(ft.icons.ERROR_OUTLINE, size=64, color="#F44336"),
+        ft.Icon(ft.Icons.ERROR_OUTLINE, size=64, color="#F44336"),
         ft.Text("Error", size=20, weight=ft.FontWeight.BOLD, color="#F44336"),
         ft.Text(error_message, size=14, color="#757575", text_align=ft.TextAlign.CENTER)
     ]
@@ -177,9 +182,9 @@ def create_error_display(
     if on_retry:
         controls.append(
             ft.ElevatedButton(
-                text="Retry",
+                content="Retry",
                 on_click=on_retry,
-                icon=ft.icons.REFRESH
+                icon=ft.Icons.REFRESH
             )
         )
     

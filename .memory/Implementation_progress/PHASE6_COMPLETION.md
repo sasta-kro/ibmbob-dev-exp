@@ -2,13 +2,54 @@
 
 **Date Completed:** 2026-05-16  
 **Phase:** 6 of 7 - Dashboard UI Implementation  
-**Status:** COMPLETE
+**Status:** STABILIZED, SMOKE VERIFIED
 
 ---
 
 ## Executive Summary
 
-Phase 6 implements a comprehensive Flet-based desktop UI for the codebase analyzer. The implementation includes a complete navigation system, multiple pages for different functionalities, reusable components, and a cohesive design system.
+Phase 6 implements a Flet-based desktop UI for the codebase analyzer. The implementation includes navigation, pages for core workflows, reusable components, and a cohesive design system.
+
+The follow-up stabilization pass corrected model mismatches, restored missing documentation browser scope, and made the UI importable with the installed Flet dependency.
+
+---
+
+## Stabilization Addendum
+
+**Date Stabilized:** 2026-05-16
+
+**Issues Found in Bob's First Pass:**
+- The Phase 6 test did not collect because it imported non-existent `FindingSeverity` and `FindingCategory` names.
+- Finding UI components used hallucinated fields: `category`, `file_path`, `line_number`, `evidence`, and `suggestion`.
+- Overview charts read `Project.metadata` and `Project.functionality_groups`, which do not exist on the real `Project` model.
+- The plan required a Documentation Browser, but no documentation page or navigation destination existed.
+- The overview "View Documentation" action routed to a missing `docs` page.
+- Scan folder selection was a no-op.
+- Finding and suggestion actions only displayed snackbars and did not update model state.
+- The UI used older Flet helper APIs while the installed dependency is Flet `0.85.1`.
+
+**Fixes Applied:**
+- Updated UI calls to direct Flet `0.85.1` API names.
+- Added `DocumentationPage` and wired the `docs` route into the navigation rail.
+- Updated finding cards, findings page filters, and overview charts to use real model fields.
+- Connected folder selection to `FilePicker.get_directory_path()`.
+- Connected scan execution to `AnalysisOrchestrator` with documentation, review, and suggestion generation options.
+- Updated resolve, ignore, accept, and dismiss actions to mutate model state and refresh summaries.
+- Replaced the Phase 6 smoke test with real model integration coverage.
+
+**Verification Command:**
+
+```bash
+.venv/bin/python -m pytest tests/test_phase6_stabilization.py -q
+```
+
+**Verification Result:**
+
+```text
+5 passed, 34 warnings
+```
+
+The warnings are existing Pydantic V2 deprecation warnings plus Flet `ElevatedButton` deprecation warnings.
 
 ---
 
@@ -217,9 +258,9 @@ Phase 6 implements a comprehensive Flet-based desktop UI for the codebase analyz
 **Status:** Complete | **Lines:** 211
 
 **Features Implemented:**
-- Filter panel with severity and category filters
+- Filter panel with severity and finding type filters
 - Search functionality
-- Sort control (by severity, category, file)
+- Sort control (by severity, type, file)
 - Findings count display
 - Finding cards with expand/collapse
 - Action buttons (resolve, ignore)
@@ -270,16 +311,17 @@ Phase 6 implements a comprehensive Flet-based desktop UI for the codebase analyz
 **Status:** Complete | **Lines:** 293
 
 **Features Implemented:**
-- Navigation rail with 6 pages:
+- Navigation rail with 7 pages:
   - Home
   - Scan
   - Overview
+  - Documentation
   - Findings
   - Suggestions
   - Settings
 - Page routing and navigation
 - Content area management
-- Orchestrator integration hooks
+- Orchestrator integration for analysis, documentation, review, and suggestions
 - Snackbar notifications
 - Project state management
 - Action handlers:
@@ -294,16 +336,17 @@ Phase 6 implements a comprehensive Flet-based desktop UI for the codebase analyz
 ---
 
 ### 13. Test Suite (`tests/test_phase6_stabilization.py`)
-**Status:** Complete | **Lines:** 227
+**Status:** Stabilized | **Lines:** 213
 
 **Test Coverage:**
-- UI components importability
-- UI pages importability
-- Main app importability
+- UI components rendered with real models
+- UI pages rendered with real project data
+- Main app documentation route
 - Theme color methods
 - Utility functions
-- Data models integration
-- Phase 6 completion verification
+- Finding and suggestion model integration
+- Action handler state updates
+- Scan path and option handling
 
 **Test Scenarios:**
 - Component imports
@@ -320,7 +363,7 @@ Phase 6 implements a comprehensive Flet-based desktop UI for the codebase analyz
 |--------|-------|
 | **Total Lines of Code** | ~3,471 |
 | **Components Implemented** | 13 main components |
-| **UI Pages** | 6 pages |
+| **UI Pages** | 7 pages |
 | **Reusable Components** | 10 component types |
 | **Utility Functions** | 15+ functions |
 | **Test Scenarios** | 7 test functions |
@@ -347,6 +390,7 @@ UI Layer
 │   ├── HomePage
 │   ├── ScanPage
 │   ├── OverviewPage
+│   ├── DocumentationPage
 │   ├── FindingsPage
 │   ├── SuggestionsPage
 │   └── SettingsPage
@@ -440,11 +484,10 @@ UI Layer
 
 ## Known Limitations
 
-1. **File Picker:** Folder selection uses placeholder (needs platform-specific implementation)
-2. **Documentation Browser:** Not implemented (marked as skipped per simplified scope)
-3. **Real-time Updates:** Progress updates require manual refresh calls
-4. **Persistence:** Settings and project history not persisted to disk yet
-5. **Theming:** Dark theme defined but not fully tested
+1. **UI Deprecations:** Several buttons use Flet controls deprecated in `0.80.0`
+2. **Real-time Updates:** Long analysis still runs synchronously from the UI event handler
+3. **Persistence:** Settings and project history are not persisted to disk yet
+4. **Theming:** Dark theme is defined but not fully tested
 
 ---
 
@@ -489,8 +532,8 @@ python -m src.ui.app
 
 ### Important Context
 
-1. Phase 6 UI is complete with all major pages and components
-2. Navigation system is functional with 6 main pages
+1. Phase 6 UI is implemented and smoke verified with real model objects
+2. Navigation system is functional with 7 main pages
 3. Reusable component library established
 4. Design system is consistent across all pages
 5. Integration hooks are in place for orchestrator
@@ -534,7 +577,7 @@ When implementing Phase 7 tests:
 
 ## Sign-off
 
-**Phase 6 Status:** COMPLETE  
+**Phase 6 Status:** STABILIZED, SMOKE VERIFIED  
 **Ready for Phase 7:** YES  
 **Blockers:** None  
 **Estimated Phase 7 Duration:** 2 weeks

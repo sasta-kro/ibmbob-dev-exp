@@ -4,10 +4,10 @@ Card Components
 Reusable card components for displaying findings, suggestions, and other data.
 """
 
-from typing import Optional, List, Callable
+from typing import Optional, Callable
 import flet as ft
-from ...models.finding import Finding, FindingSeverity, FindingCategory
-from ...models.suggestion import Suggestion, EffortLevel, ImpactLevel
+from ...models.finding import Finding
+from ...models.suggestion import Suggestion
 from ..theme import AppTheme
 from ..utils import create_badge, truncate_text
 
@@ -36,7 +36,6 @@ class FindingCard(ft.Card):
         """Build card content"""
         severity_color = AppTheme.get_severity_color(self.finding.severity.value)
         
-        # Header with severity badge and title
         header = ft.Row(
             controls=[
                 create_badge(
@@ -50,7 +49,7 @@ class FindingCard(ft.Card):
                     expand=True
                 ),
                 ft.IconButton(
-                    icon=ft.icons.EXPAND_MORE if not self.is_expanded else ft.icons.EXPAND_LESS,
+                    icon=ft.Icons.EXPAND_MORE if not self.is_expanded else ft.Icons.EXPAND_LESS,
                     on_click=self._toggle_expand,
                     tooltip="Expand/Collapse"
                 )
@@ -58,38 +57,38 @@ class FindingCard(ft.Card):
             alignment=ft.MainAxisAlignment.SPACE_BETWEEN
         )
         
-        # File location
+        file_path = self.finding.location.file_path
+        line_start = self.finding.location.line_start
+        line_end = self.finding.location.line_end
+        line_label = str(line_start) if line_start == line_end else f"{line_start}-{line_end}"
         location = ft.Text(
-            f"{self.finding.file_path}:{self.finding.line_number or 'N/A'}",
+            f"{file_path}:{line_label}",
             size=12,
             color="#757575"
         )
         
-        # Category badge
-        category_badge = create_badge(
-            self.finding.category.value,
+        finding_type_badge = create_badge(
+            self.finding.finding_type.value,
             "#9E9E9E",
             size="small"
         )
         
-        # Description
         description = ft.Text(
             truncate_text(self.finding.description, 200) if not self.is_expanded else self.finding.description,
             size=14,
             color="#212121"
         )
         
-        controls = [header, location, category_badge, description]
+        controls = [header, location, finding_type_badge, description]
         
-        # Expandable content
         if self.is_expanded:
-            if self.finding.evidence:
+            if self.finding.location.code_snippet:
                 controls.append(ft.Container(height=8))
-                controls.append(ft.Text("Evidence:", size=12, weight=ft.FontWeight.BOLD))
+                controls.append(ft.Text("Evidence", size=12, weight=ft.FontWeight.BOLD))
                 controls.append(
                     ft.Container(
                         content=ft.Text(
-                            self.finding.evidence,
+                            self.finding.location.code_snippet,
                             size=12,
                             font_family="monospace"
                         ),
@@ -99,19 +98,19 @@ class FindingCard(ft.Card):
                     )
                 )
             
-            if self.finding.suggestion:
+            recommendation = self.finding.suggested_fix or self.finding.recommendation
+            if recommendation:
                 controls.append(ft.Container(height=8))
-                controls.append(ft.Text("Suggested Fix:", size=12, weight=ft.FontWeight.BOLD))
-                controls.append(ft.Text(self.finding.suggestion, size=14))
+                controls.append(ft.Text("Suggested Fix", size=12, weight=ft.FontWeight.BOLD))
+                controls.append(ft.Text(recommendation, size=14))
             
-            # Action buttons
             if self.on_resolve or self.on_ignore:
                 action_buttons = []
                 if self.on_resolve:
                     action_buttons.append(
                         ft.ElevatedButton(
                             "Mark Resolved",
-                            icon=ft.icons.CHECK_CIRCLE,
+                            icon=ft.Icons.CHECK_CIRCLE,
                             on_click=lambda _: self.on_resolve(self.finding)
                         )
                     )
@@ -119,7 +118,7 @@ class FindingCard(ft.Card):
                     action_buttons.append(
                         ft.OutlinedButton(
                             "Ignore",
-                            icon=ft.icons.CANCEL,
+                            icon=ft.Icons.CANCEL,
                             on_click=lambda _: self.on_ignore(self.finding)
                         )
                     )
@@ -171,7 +170,6 @@ class SuggestionCard(ft.Card):
         """Build card content"""
         priority_color = AppTheme.get_priority_color(self.suggestion.priority_score)
         
-        # Header with priority and title
         header = ft.Row(
             controls=[
                 create_badge(
@@ -185,7 +183,7 @@ class SuggestionCard(ft.Card):
                     expand=True
                 ),
                 ft.IconButton(
-                    icon=ft.icons.EXPAND_MORE if not self.is_expanded else ft.icons.EXPAND_LESS,
+                    icon=ft.Icons.EXPAND_MORE if not self.is_expanded else ft.Icons.EXPAND_LESS,
                     on_click=self._toggle_expand,
                     tooltip="Expand/Collapse"
                 )
@@ -193,7 +191,6 @@ class SuggestionCard(ft.Card):
             alignment=ft.MainAxisAlignment.SPACE_BETWEEN
         )
         
-        # Effort and Impact badges
         badges = ft.Row(
             controls=[
                 create_badge(
@@ -215,7 +212,6 @@ class SuggestionCard(ft.Card):
             spacing=8
         )
         
-        # Description
         description = ft.Text(
             truncate_text(self.suggestion.description, 200) if not self.is_expanded else self.suggestion.description,
             size=14,
@@ -224,27 +220,24 @@ class SuggestionCard(ft.Card):
         
         controls = [header, badges, description]
         
-        # Expandable content
         if self.is_expanded:
-            # Benefits
             if self.suggestion.benefits:
                 controls.append(ft.Container(height=8))
-                controls.append(ft.Text("Benefits:", size=12, weight=ft.FontWeight.BOLD))
+                controls.append(ft.Text("Benefits", size=12, weight=ft.FontWeight.BOLD))
                 for benefit in self.suggestion.benefits:
                     controls.append(
                         ft.Row(
                             controls=[
-                                ft.Icon(ft.icons.CHECK_CIRCLE, size=16, color="#4CAF50"),
+                                ft.Icon(ft.Icons.CHECK_CIRCLE, size=16, color="#4CAF50"),
                                 ft.Text(benefit, size=14, expand=True)
                             ],
                             spacing=8
                         )
                     )
             
-            # Implementation steps
             if self.suggestion.implementation_steps:
                 controls.append(ft.Container(height=8))
-                controls.append(ft.Text("Implementation Steps:", size=12, weight=ft.FontWeight.BOLD))
+                controls.append(ft.Text("Implementation Steps", size=12, weight=ft.FontWeight.BOLD))
                 for i, step in enumerate(self.suggestion.implementation_steps, 1):
                     controls.append(
                         ft.Row(
@@ -267,14 +260,13 @@ class SuggestionCard(ft.Card):
                         )
                     )
             
-            # Action buttons
             if self.on_accept or self.on_dismiss:
                 action_buttons = []
                 if self.on_accept:
                     action_buttons.append(
                         ft.ElevatedButton(
                             "Accept",
-                            icon=ft.icons.CHECK,
+                            icon=ft.Icons.CHECK,
                             on_click=lambda _: self.on_accept(self.suggestion)
                         )
                     )
@@ -282,7 +274,7 @@ class SuggestionCard(ft.Card):
                     action_buttons.append(
                         ft.OutlinedButton(
                             "Dismiss",
-                            icon=ft.icons.CLOSE,
+                            icon=ft.Icons.CLOSE,
                             on_click=lambda _: self.on_dismiss(self.suggestion)
                         )
                     )
@@ -381,10 +373,10 @@ class ProgressCard(ft.Card):
                 ft.Container(
                     content=ft.OutlinedButton(
                         "Cancel",
-                        icon=ft.icons.CANCEL,
+                        icon=ft.Icons.CANCEL,
                         on_click=lambda _: self.on_cancel()
                     ),
-                    alignment=ft.alignment.center_right
+                    alignment=ft.Alignment(1, 0)
                 )
             )
         

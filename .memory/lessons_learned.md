@@ -2,7 +2,7 @@
 
 This file records mistakes, failures, and the lessons extracted from them. It exists so that the same mistakes don't repeat across sessions.
 
-Every entry should tell the truth: the ugly parts, the embarrassing parts, the parts where I should have known better. Omitting or softening mistakes defeats the purpose. Writing down past failures is not a weakness, it's how growth persists across session resets.
+Every entry should tell the truth: the ugly parts, the embarrassing parts, and the parts that should have been handled better. Omitting or softening mistakes defeats the purpose. Writing down past failures is not a weakness; it is how growth persists across session resets.
 
 ## How to Add a Lesson
 
@@ -13,7 +13,7 @@ Format:
 ```
 ### Short descriptive title
 - **What happened:** What actually occurred. Be specific. Include context.
-- **The mistake:** What I did wrong. Own it. No hedging.
+- **The mistake:** What went wrong. Own it. No hedging.
 - **How it was solved:** How the issue was resolved (if applicable).
 - **Lesson:** The actionable takeaway. What to do differently next time.
 ```
@@ -39,3 +39,9 @@ Order: newest lessons at the bottom (append-only).
 - **The mistake:** The test asserted generated output files without proving that the public orchestrator method honored the real data model contract.
 - **How it was solved:** The smoke test was changed to use the actual `Project` constructor fields, assert roadmap output files, assert returned suggestions, and assert the updated project suggestion summary.
 - **Lesson:** Phase smoke tests must instantiate real models with valid fields and assert persistent state changes, not only returned dictionaries or generated files.
+
+### UI tests must instantiate real controls with installed dependencies
+- **What happened:** Bob's Phase 6 UI test imported non-existent model names and only checked that classes existed. The UI used hallucinated finding fields and older Flet helper names that failed with Flet 0.85.1.
+- **The mistake:** Import-only tests missed constructor-level failures, model integration failures, missing documentation navigation, and no-op action handlers.
+- **How it was solved:** The Phase 6 smoke test was replaced with tests that instantiate controls using real `Project`, `Finding`, and `Suggestion` objects, exercise filtering and status actions, and verify the documentation route.
+- **Lesson:** UI phase smoke tests must construct real controls against the installed UI library and real domain models, not only import classes.

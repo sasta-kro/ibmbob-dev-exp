@@ -66,21 +66,21 @@ class AppTheme:
     SHADOW_LIGHT = ft.BoxShadow(
         spread_radius=1,
         blur_radius=3,
-        color=ft.colors.with_opacity(0.1, ft.colors.BLACK),
+        color=ft.Colors.with_opacity(0.1, ft.Colors.BLACK),
         offset=ft.Offset(0, 1)
     )
     
     SHADOW_MEDIUM = ft.BoxShadow(
         spread_radius=2,
         blur_radius=6,
-        color=ft.colors.with_opacity(0.15, ft.colors.BLACK),
+        color=ft.Colors.with_opacity(0.15, ft.Colors.BLACK),
         offset=ft.Offset(0, 2)
     )
     
     SHADOW_HEAVY = ft.BoxShadow(
         spread_radius=3,
         blur_radius=10,
-        color=ft.colors.with_opacity(0.2, ft.colors.BLACK),
+        color=ft.Colors.with_opacity(0.2, ft.Colors.BLACK),
         offset=ft.Offset(0, 4)
     )
     
@@ -126,7 +126,7 @@ class AppTheme:
                 primary=AppTheme.PRIMARY,
                 on_primary=AppTheme.TEXT_ON_PRIMARY,
                 background=AppTheme.BG_DARK,
-                surface=ft.colors.GREY_900
+                surface=ft.Colors.GREY_900
             )
         )
 

@@ -1,236 +1,212 @@
-"""
-Phase 6 Stabilization Test
+from pathlib import Path
 
-Smoke test to verify Phase 6 UI implementation is functional.
-"""
+import flet as ft
 
-import pytest
+from src.models.finding import CodeLocation, Finding, FindingType, Severity
 from src.models.project import Project
-from src.models.finding import Finding, FindingSeverity, FindingCategory
 from src.models.suggestion import (
-    Suggestion,
-    SuggestionCategory,
     EffortLevel,
     ImpactLevel,
-    ImplementationStep
+    ImplementationStep,
+    Suggestion,
+    SuggestionCategory,
+    SuggestionStatus
 )
 
 
-def test_ui_components_importable():
-    """Test that UI components can be imported"""
-    from src.ui.theme import AppTheme
-    from src.ui.utils import format_number, format_percentage
-    from src.ui.components import (
-        FindingCard,
-        SuggestionCard,
-        ProgressCard,
-        FilterPanel,
-        SortControl,
-        SearchBar,
-        PieChart,
-        BarChart,
-        MetricCard,
-        ProgressRing
+class FakePage:
+    def __init__(self):
+        self.overlay = []
+        self.controls = []
+        self.update_count = 0
+        self.snack_bar = None
+    
+    def add(self, control):
+        self.controls.append(control)
+    
+    def update(self):
+        self.update_count += 1
+
+
+def make_finding() -> Finding:
+    return Finding(
+        id="finding-1",
+        title="Unsafe query",
+        description="User input is used in a SQL query",
+        severity=Severity.HIGH,
+        finding_type=FindingType.SECURITY,
+        confidence=0.9,
+        location=CodeLocation(
+            file_path=Path("src/database.py"),
+            line_start=12,
+            line_end=12,
+            code_snippet="cursor.execute(query)"
+        ),
+        message="Parameterized queries should be used",
+        recommendation="Use query parameters",
+        source="static_analyzer"
     )
-    
-    # Verify theme constants exist
-    assert AppTheme.PRIMARY is not None
-    assert AppTheme.SECONDARY is not None
-    
-    # Verify utility functions work
-    assert format_number(1000) == "1,000"
-    assert format_percentage(75.5) == "75.5%"
-    
-    # Verify component classes exist
-    assert FindingCard is not None
-    assert SuggestionCard is not None
-    assert ProgressCard is not None
-    assert FilterPanel is not None
-    assert SortControl is not None
-    assert SearchBar is not None
-    assert PieChart is not None
-    assert BarChart is not None
-    assert MetricCard is not None
-    assert ProgressRing is not None
 
 
-def test_ui_pages_importable():
-    """Test that UI pages can be imported"""
-    from src.ui.pages import (
-        HomePage,
-        ScanPage,
-        OverviewPage,
-        FindingsPage,
-        SuggestionsPage,
-        SettingsPage
-    )
-    
-    # Verify page classes exist
-    assert HomePage is not None
-    assert ScanPage is not None
-    assert OverviewPage is not None
-    assert FindingsPage is not None
-    assert SuggestionsPage is not None
-    assert SettingsPage is not None
-
-
-def test_app_importable():
-    """Test that main app can be imported"""
-    from src.ui.app import CodebaseAnalyzerApp, main
-    
-    # Verify app classes exist
-    assert CodebaseAnalyzerApp is not None
-    assert main is not None
-
-
-def test_theme_color_methods():
-    """Test theme color helper methods"""
-    from src.ui.theme import AppTheme
-    
-    # Test severity colors
-    assert AppTheme.get_severity_color("critical") == AppTheme.CRITICAL
-    assert AppTheme.get_severity_color("high") == AppTheme.HIGH
-    assert AppTheme.get_severity_color("medium") == AppTheme.MEDIUM
-    assert AppTheme.get_severity_color("low") == AppTheme.LOW
-    assert AppTheme.get_severity_color("info") == AppTheme.INFO_SEVERITY
-    
-    # Test priority colors
-    assert AppTheme.get_priority_color(90) == AppTheme.CRITICAL
-    assert AppTheme.get_priority_color(70) == AppTheme.HIGH
-    assert AppTheme.get_priority_color(50) == AppTheme.MEDIUM
-    assert AppTheme.get_priority_color(30) == AppTheme.LOW
-
-
-def test_utility_functions():
-    """Test utility functions"""
-    from src.ui.utils import (
-        format_number,
-        format_percentage,
-        format_file_size,
-        format_duration,
-        truncate_text
-    )
-    
-    # Test number formatting
-    assert format_number(1000) == "1,000"
-    assert format_number(1000000) == "1,000,000"
-    
-    # Test percentage formatting
-    assert format_percentage(75.5) == "75.5%"
-    assert format_percentage(75.567, 2) == "75.57%"
-    
-    # Test file size formatting
-    assert "B" in format_file_size(500)
-    assert "KB" in format_file_size(1024)
-    assert "MB" in format_file_size(1024 * 1024)
-    
-    # Test duration formatting
-    assert "s" in format_duration(30)
-    assert "m" in format_duration(120)
-    assert "h" in format_duration(3600)
-    
-    # Test text truncation
-    long_text = "a" * 200
-    truncated = truncate_text(long_text, 100)
-    assert len(truncated) <= 103  # 100 + "..."
-    assert truncated.endswith("...")
-
-
-def test_ui_data_models_integration():
-    """Test that UI components work with data models"""
-    # Create test project
-    project = Project(
-        id="test-project",
-        name="Test Project",
-        root_paths=["/test/path"]
-    )
-    
-    # Create test finding
-    finding = Finding(
-        id="test-finding",
-        title="Test Finding",
-        description="Test description",
-        severity=FindingSeverity.HIGH,
-        category=FindingCategory.BUG,
-        file_path="/test/file.py",
-        line_number=10,
-        confidence=0.9
-    )
-    
-    # Create test suggestion
-    suggestion = Suggestion(
-        id="test-suggestion",
-        title="Test Suggestion",
-        description="Test description",
-        category=SuggestionCategory.REFACTORING,
-        effort=EffortLevel.MEDIUM,
+def make_suggestion() -> Suggestion:
+    return Suggestion(
+        id="suggestion-1",
+        title="Use parameterized queries",
+        description="Replace string-built SQL with query parameters",
+        category=SuggestionCategory.SECURITY,
+        effort=EffortLevel.LOW,
         impact=ImpactLevel.HIGH,
-        priority_score=75.0,
+        priority_score=90,
+        related_files=[Path("src/database.py")],
+        related_findings=["finding-1"],
+        rationale="Parameterized queries reduce injection risk",
+        benefits=["Reduced security risk"],
         implementation_steps=[
             ImplementationStep(
                 order=1,
-                description="Step 1",
-                estimated_time="1 hour"
+                description="Replace string interpolation with query parameters",
+                estimated_time="30 minutes"
             )
         ],
-        benefits=["Benefit 1"],
-        related_finding_ids=["test-finding"]
+        source="static_analyzer",
+        confidence=0.9
     )
-    
-    # Verify models are compatible with UI
-    assert project.name == "Test Project"
-    assert finding.severity == FindingSeverity.HIGH
-    assert suggestion.priority_score == 75.0
-    assert len(suggestion.implementation_steps) == 1
 
 
-def test_phase6_completion():
-    """Verify Phase 6 components are complete"""
-    # Test theme
+def make_project() -> Project:
+    project = Project(
+        id="project-1",
+        name="Test Project",
+        root_paths=[Path("/tmp/test-project")]
+    )
+    project.metrics.languages = {"python": 3}
+    project.findings = [make_finding()]
+    project.suggestions = [make_suggestion()]
+    project._update_finding_summary()
+    project._update_suggestion_summary()
+    return project
+
+
+def test_ui_components_import_and_render_with_real_models():
+    from src.ui.components import (
+        BarChart,
+        FindingCard,
+        FilterPanel,
+        MetricCard,
+        PieChart,
+        ProgressCard,
+        ProgressRing,
+        SearchBar,
+        SortControl,
+        SuggestionCard
+    )
     from src.ui.theme import AppTheme
-    assert hasattr(AppTheme, 'PRIMARY')
-    assert hasattr(AppTheme, 'get_severity_color')
-    assert hasattr(AppTheme, 'get_priority_color')
+    from src.ui.utils import format_number, format_percentage
     
-    # Test utils
-    from src.ui import utils
-    assert hasattr(utils, 'format_number')
-    assert hasattr(utils, 'create_badge')
-    assert hasattr(utils, 'create_stat_card')
+    assert AppTheme.get_severity_color("critical") == AppTheme.CRITICAL
+    assert AppTheme.get_priority_color(90) == AppTheme.CRITICAL
+    assert format_number(1000) == "1,000"
+    assert format_percentage(75.5) == "75.5%"
     
-    # Test components
-    from src.ui.components import cards, filters, charts
-    assert hasattr(cards, 'FindingCard')
-    assert hasattr(cards, 'SuggestionCard')
-    assert hasattr(cards, 'ProgressCard')
-    assert hasattr(filters, 'FilterPanel')
-    assert hasattr(filters, 'SortControl')
-    assert hasattr(charts, 'PieChart')
-    assert hasattr(charts, 'BarChart')
-    assert hasattr(charts, 'MetricCard')
-    
-    # Test pages
-    from src.ui.pages import (
-        home_page,
-        scan_page,
-        overview_page,
-        findings_page,
-        suggestions_page,
-        settings_page
-    )
-    assert hasattr(home_page, 'HomePage')
-    assert hasattr(scan_page, 'ScanPage')
-    assert hasattr(overview_page, 'OverviewPage')
-    assert hasattr(findings_page, 'FindingsPage')
-    assert hasattr(suggestions_page, 'SuggestionsPage')
-    assert hasattr(settings_page, 'SettingsPage')
-    
-    # Test app
-    from src.ui import app
-    assert hasattr(app, 'CodebaseAnalyzerApp')
-    assert hasattr(app, 'main')
-    
-    print("✓ Phase 6 UI implementation complete")
-    print("✓ All components, pages, and app structure verified")
+    FindingCard(make_finding(), expanded=True)
+    SuggestionCard(make_suggestion(), expanded=True)
+    ProgressCard("Scan", current=1, total=2, status="Running")
+    FilterPanel({"severity": ["high"]}, on_filter_change=lambda _: None)
+    SortControl(["Severity"], on_sort_change=lambda *_: None)
+    SearchBar(on_search=lambda _: None)
+    PieChart("Languages", {"python": 3})
+    BarChart("Findings", {"security": 1})
+    MetricCard("Files", "3", ft.Icons.FOLDER)
+    ProgressRing(50)
 
-# Made with Bob
+
+def test_ui_pages_import_and_render_with_real_project(tmp_path):
+    from src.ui.pages import (
+        DocumentationPage,
+        FindingsPage,
+        HomePage,
+        OverviewPage,
+        ScanPage,
+        SettingsPage,
+        SuggestionsPage
+    )
+    
+    project = make_project()
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir()
+    (docs_dir / "PROJECT_OVERVIEW.md").write_text("# Project Overview\n", encoding="utf-8")
+    
+    HomePage(on_new_analysis=lambda: None)
+    ScanPage(on_start_scan=lambda *_: None)
+    OverviewPage(project=project)
+    DocumentationPage(project=project, docs_dir=docs_dir)
+    FindingsPage(findings=project.findings)
+    SuggestionsPage(suggestions=project.suggestions)
+    SettingsPage(on_save=lambda _: None)
+
+
+def test_findings_and_suggestions_use_real_model_fields():
+    from src.ui.pages import FindingsPage, SuggestionsPage
+    
+    findings_page = FindingsPage(findings=[make_finding()])
+    findings_page.update = lambda: None
+    findings_page._on_filter_change({"type": ["security"]})
+    findings_page._on_search("database")
+    findings_page._on_sort_change("File", ascending=True)
+    assert len(findings_page.filtered_findings) == 1
+    
+    suggestions_page = SuggestionsPage(suggestions=[make_suggestion()])
+    suggestions_page.update = lambda: None
+    suggestions_page._on_filter_change({"category": ["security"], "effort": ["low"]})
+    suggestions_page._on_search("parameterized")
+    suggestions_page._on_sort_change("Priority", ascending=False)
+    assert len(suggestions_page.filtered_suggestions) == 1
+
+
+def test_app_has_documentation_route_and_status_actions():
+    from src.ui.app import CodebaseAnalyzerApp
+    
+    fake_page = FakePage()
+    app = CodebaseAnalyzerApp(fake_page)
+    project = make_project()
+    app.current_project = project
+    
+    assert "docs" in app.page_order
+    app._navigate_to("docs")
+    assert app.current_page == "docs"
+    
+    finding = project.findings[0]
+    suggestion = project.suggestions[0]
+    
+    app._resolve_finding(finding)
+    assert finding.is_resolved is True
+    assert project.finding_summary.resolved_count == 1
+    
+    app._ignore_finding(finding)
+    assert finding.is_false_positive is True
+    assert project.finding_summary.false_positive_count == 1
+    
+    app._accept_suggestion(suggestion)
+    assert suggestion.status == SuggestionStatus.IN_PROGRESS
+    
+    app._dismiss_suggestion(suggestion)
+    assert suggestion.status == SuggestionStatus.REJECTED
+    assert project.suggestion_summary.by_status[SuggestionStatus.REJECTED] == 1
+
+
+def test_scan_page_tracks_paths_and_options():
+    from src.ui.pages import ScanPage
+    
+    captured = {}
+    page = ScanPage(
+        on_start_scan=lambda paths, options: captured.update(
+            {"paths": paths, "options": options}
+        )
+    )
+    page.update = lambda: None
+    page.add_path("/tmp/test-project")
+    page._update_option("enable_ai", False)
+    page._start_analysis(None)
+    
+    assert captured["paths"] == ["/tmp/test-project"]
+    assert captured["options"]["enable_ai"] is False
