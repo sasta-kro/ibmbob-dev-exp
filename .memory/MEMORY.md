@@ -5,7 +5,7 @@
 **Project Name:** Codebase Analyzer  
 **Type:** Python Desktop Application (Flet-based)  
 **Purpose:** AI-powered codebase analysis, documentation generation, code review, and improvement suggestions  
-**Current Phase:** Phase 4 Stabilized (Code Review Engine) - Ready for Phase 5 first pass
+**Current Phase:** Phase 5 Stabilized (Suggestion Engine) - Ready for Phase 6 first pass
 **Last Updated:** 2026-05-16
 
 ---
@@ -14,6 +14,7 @@
 
 - 2026-05-16: Bob's Phase 3 stabilization pass regressed `AnalysisOrchestrator.analyze_project()` by moving `return project` out of the method. The follow-up fix restored the return, removed the unreachable documentation return, connected API reference generation to the documentation flow, and added a smoke test for analysis plus documentation output. Phase 3 and Phase 4 smoke tests passed on 2026-05-16.
 - 2026-05-16: Bob's Phase 4 pass inserted `review_project()` inside `generate_documentation()`, causing documentation generation to skip `INDEX.md` and return `None`. The follow-up fix restored the documentation method boundary, kept review orchestration separate, connected review findings back to the `Project`, added `functionalityAreas` to review JSON output, fixed `FindingSummary` serialization, and corrected `AIReviewer` calls to match the existing `WatsonService.analyze_code()` signature. Phase 3 and Phase 4 smoke tests passed on 2026-05-16.
+- 2026-05-16: Bob's Phase 5 pass added the suggestion engine, but the smoke test used invalid `Project` constructor fields and did not prove `Project` state integration. The follow-up fix changed the test to use the real `Project` model contract, updated `AnalysisOrchestrator.generate_suggestions()` to store prioritized suggestions on `Project`, refreshed `Project.suggestion_summary`, and generated the roadmap from the same prioritized list. Phase 3, Phase 4, and Phase 5 smoke tests passed on 2026-05-16.
 
 ---
 
@@ -182,11 +183,10 @@
 
 ### Areas for Enhancement
 1. **JavaScript/TypeScript Analysis:** Currently regex-based, could use proper AST parser (esprima/babel)
-2. **Test Coverage:** No tests yet (scheduled for Phase 7)
+2. **Test Coverage:** Phase smoke tests exist; broader unit and integration coverage remains scheduled for Phase 7
 3. **UI Components:** Not yet implemented (Phase 6)
-4. **Documentation Generator:** Next phase (Phase 3)
-5. **Code Review Engine:** Not yet implemented (Phase 4)
-6. **Suggestion Engine:** Not yet implemented (Phase 5)
+4. **HTML Documentation Export:** Markdown documentation exists; HTML export remains future work
+5. **Pydantic V2 Cleanup:** Models still use deprecated class-based config and `json_encoders`
 
 ---
 
@@ -286,21 +286,16 @@ Comprehensive default ignore list including:
 
 ---
 
-## Next Steps (Phase 3)
+## Next Steps (Phase 6)
 
-**Documentation Generator Implementation:**
-- Markdown generator for project docs
-- HTML generator with syntax highlighting
-- Template system (Jinja2)
-- API documentation extraction
-- README generation
-- Cross-reference linking
-
-**Files to Create:**
-- `src/generators/markdown_generator.py`
-- `src/generators/html_generator.py`
-- `src/generators/readme_generator.py`
-- `src/templates/` directory with Jinja2 templates
+**Dashboard UI Implementation:**
+- Flet-based application shell
+- Overview page with project metrics
+- Documentation browser
+- Review findings page
+- Suggestions and roadmap page
+- Settings and configuration page
+- Visual filters for findings and suggestions
 
 ---
 
@@ -416,3 +411,27 @@ Comprehensive default ignore list including:
 
 - `file_documentation.md.j2` (280 lines) - File structure, API, metrics
 - `api_reference.md.j2` (137 lines) - Public API reference
+
+### 7. Suggestion Components (`src/suggestions/`)
+
+**Suggestion Generator (`suggestion_generator.py`):**
+- Generates suggestions from review findings
+- Adds pattern-based suggestions for repeated file, security, performance, and documentation issues
+- Estimates effort and impact levels
+- Builds implementation steps, benefits, considerations, and risk notes
+
+**Prioritizer (`prioritizer.py`):**
+- Calculates priority scores
+- Sorts suggestions into implementation order
+- Identifies quick wins and high priority work
+- Groups and filters suggestions by category, effort, and impact
+
+**Roadmap Generator (`roadmap_generator.py`):**
+- Creates `improvement-suggestions.json`
+- Creates `IMPROVEMENT_ROADMAP.md`
+- Builds immediate, short-term, and long-term recommendation sections
+
+**Orchestrator Integration:**
+- `AnalysisOrchestrator.generate_suggestions()` initializes the Phase 5 flow
+- Prioritized suggestions are stored on `Project.suggestions`
+- `Project.suggestion_summary` is updated after generation

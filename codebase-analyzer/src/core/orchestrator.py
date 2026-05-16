@@ -6,7 +6,7 @@ interface for analyzing codebases.
 """
 
 from pathlib import Path
-from typing import Optional, Callable, Dict, Any
+from typing import Optional, Callable, Dict, Any, List
 from datetime import datetime
 
 from .scanner import Scanner, ScanResult
@@ -17,9 +17,13 @@ from ..services.cache_service import CacheService
 from ..generators.markdown_generator import MarkdownGenerator
 from ..generators.index_generator import IndexGenerator
 from ..review.review_engine import ReviewEngine
+from ..suggestions.suggestion_generator import SuggestionGenerator
+from ..suggestions.prioritizer import Prioritizer
+from ..suggestions.roadmap_generator import RoadmapGenerator
 from ..models.project import Project
 from ..models.file_info import FileInfo
 from ..models.functionality import FunctionalityGroup, FunctionalityMap
+from ..models.finding import Finding
 from ..utils.logger import get_logger
 from ..utils.config import Config
 
@@ -35,6 +39,8 @@ class AnalysisOrchestrator:
     - Static code analysis
     - AI-powered semantic analysis
     - Functionality grouping
+    - Code review
+    - Improvement suggestions
     - Result caching
     - Progress tracking
     """
@@ -63,6 +69,11 @@ class AnalysisOrchestrator:
         
         # Initialize review engine
         self.review_engine = ReviewEngine(config)
+        
+        # Initialize suggestion engine
+        self.suggestion_generator = SuggestionGenerator(self.watson_service)
+        self.prioritizer = Prioritizer()
+        self.roadmap_generator = RoadmapGenerator(self.prioritizer)
         
         # Progress tracking
         self.progress_callback: Optional[Callable[[str, int, int], None]] = None
@@ -235,6 +246,57 @@ class AnalysisOrchestrator:
         
         logger.info(f"Code review complete: {review_result['total_findings']} findings")
         return review_result
+    
+    def generate_suggestions(
+        self,
+        findings: List[Finding],
+        project: Project,
+        output_dir: Optional[str] = None,
+        use_ai: bool = False
+    ) -> Dict[str, Any]:
+        """
+        Generate improvement suggestions from code review findings.
+        
+        Args:
+            findings: List of code review findings
+            project: Analyzed project object
+            output_dir: Optional output directory for suggestion reports
+            use_ai: Whether to use AI for enhanced suggestions
+            
+        Returns:
+            Dictionary with suggestion results and roadmap
+        """
+        logger.info(f"Generating suggestions from {len(findings)} findings")
+        
+        if output_dir is None:
+            output_dir = './suggestions'
+        
+        output_path = Path(output_dir)
+        
+        suggestions = self.suggestion_generator.generate_suggestions(
+            findings,
+            use_ai=use_ai
+        )
+        prioritized_suggestions = self.prioritizer.prioritize_suggestions(suggestions)
+        project.suggestions = prioritized_suggestions
+        project._update_suggestion_summary()
+        
+        roadmap = self.roadmap_generator.generate_roadmap(
+            prioritized_suggestions,
+            project.name,
+            output_path
+        )
+        
+        logger.info(f"Generated {len(prioritized_suggestions)} suggestions")
+        
+        return {
+            'total_suggestions': len(prioritized_suggestions),
+            'quick_wins': len(self.prioritizer.get_quick_wins(prioritized_suggestions)),
+            'high_priority': len(self.prioritizer.get_high_priority(prioritized_suggestions)),
+            'suggestions': prioritized_suggestions,
+            'roadmap': roadmap,
+            'output_dir': str(output_path),
+        }
     
     def _analyze_files(
         self,

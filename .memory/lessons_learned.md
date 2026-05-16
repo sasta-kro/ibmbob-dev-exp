@@ -33,3 +33,9 @@ Order: newest lessons at the bottom (append-only).
 - **The mistake:** New feature integration was checked in without running a regression smoke test for existing public methods.
 - **How it was solved:** The method boundary was restored, Phase 4 review remained a separate orchestrator method, and a Phase 4 smoke test was added that exercises documentation generation before review execution.
 - **Lesson:** Each phase stabilization must include the previous phase smoke tests plus the new phase smoke tests, especially when editing shared orchestrator code.
+
+### Phase tests must use real model contracts
+- **What happened:** Bob's Phase 5 smoke test constructed `Project` with invalid fields and did not verify that suggestion generation updated `Project.suggestions` or `Project.suggestion_summary`.
+- **The mistake:** The test asserted generated output files without proving that the public orchestrator method honored the real data model contract.
+- **How it was solved:** The smoke test was changed to use the actual `Project` constructor fields, assert roadmap output files, assert returned suggestions, and assert the updated project suggestion summary.
+- **Lesson:** Phase smoke tests must instantiate real models with valid fields and assert persistent state changes, not only returned dictionaries or generated files.
