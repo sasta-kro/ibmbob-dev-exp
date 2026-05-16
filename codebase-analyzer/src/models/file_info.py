@@ -5,7 +5,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class FileType(str, Enum):
@@ -59,7 +59,7 @@ class FileMetrics(BaseModel):
 
 class FileInfo(BaseModel):
     """Complete information about a source code file."""
-    
+
     # Basic file information
     path: Path = Field(..., description="Absolute path to the file")
     relative_path: Path = Field(..., description="Path relative to project root")
@@ -67,67 +67,62 @@ class FileInfo(BaseModel):
     extension: str = Field(..., description="File extension")
     file_type: FileType = Field(..., description="Detected file type")
     size_bytes: int = Field(..., description="File size in bytes")
-    
+
     # Timestamps
     created_at: Optional[datetime] = Field(None, description="File creation time")
     modified_at: Optional[datetime] = Field(None, description="Last modification time")
     analyzed_at: datetime = Field(default_factory=datetime.now, description="Analysis timestamp")
-    
+
     # Content
     encoding: str = Field("utf-8", description="File encoding")
     content_hash: Optional[str] = Field(None, description="SHA256 hash of content")
-    
+
     # Code structure
     imports: List[ImportInfo] = Field(default_factory=list, description="Import statements")
     exports: List[str] = Field(default_factory=list, description="Exported names")
     code_elements: List[CodeElement] = Field(default_factory=list, description="Functions, classes, etc.")
-    
+
     # Dependencies
     dependencies: List[str] = Field(default_factory=list, description="External dependencies")
     internal_dependencies: List[Path] = Field(default_factory=list, description="Internal file dependencies")
-    
+
     # Metrics
     metrics: FileMetrics = Field(default_factory=lambda: FileMetrics(), description="Code metrics")
-    
+
     # Analysis results
     language_features: Dict[str, bool] = Field(default_factory=dict, description="Language features used")
     frameworks_detected: List[str] = Field(default_factory=list, description="Detected frameworks")
-    
+
     # AI-generated content
     ai_summary: Optional[str] = Field(None, description="AI-generated file summary")
     ai_purpose: Optional[str] = Field(None, description="AI-detected file purpose")
-    
+
     # Errors and warnings
     parse_errors: List[str] = Field(default_factory=list, description="Parsing errors")
     warnings: List[str] = Field(default_factory=list, description="Analysis warnings")
-    
-    class Config:
-        """Pydantic configuration."""
-        json_encoders = {
-            Path: str,
-            datetime: lambda v: v.isoformat()
-        }
-    
+
+    model_config = ConfigDict(json_encoders={Path: str, datetime: lambda v: v.isoformat()})
+
     def get_functions(self) -> List[CodeElement]:
         """Get all functions in the file."""
         return [e for e in self.code_elements if e.type == "function"]
-    
+
     def get_classes(self) -> List[CodeElement]:
         """Get all classes in the file."""
         return [e for e in self.code_elements if e.type == "class"]
-    
+
     def get_methods(self) -> List[CodeElement]:
         """Get all methods in the file."""
         return [e for e in self.code_elements if e.type == "method"]
-    
+
     def get_public_api(self) -> List[CodeElement]:
         """Get public API elements (non-private functions and classes)."""
         return [e for e in self.code_elements if not e.is_private and e.type in ["function", "class"]]
-    
+
     def has_errors(self) -> bool:
         """Check if file has parsing errors."""
         return len(self.parse_errors) > 0
-    
+
     def to_dict(self) -> dict:
         """Convert to dictionary with proper serialization."""
         return self.model_dump(mode='json')

@@ -2,9 +2,8 @@
 
 import logging
 from collections import defaultdict
-from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional
 
 from ..models.finding import Finding, FindingType, Severity
 from ..models.suggestion import (
@@ -22,21 +21,21 @@ logger = logging.getLogger(__name__)
 class SuggestionGenerator:
     """
     Generate actionable improvement suggestions from code review findings.
-    
+
     Analyzes findings to identify improvement opportunities, generates
     suggestions with implementation guidance, and provides rationale.
     """
-    
+
     def __init__(self, watson_service: Optional[WatsonService] = None):
         """
         Initialize suggestion generator.
-        
+
         Args:
             watson_service: Optional Watson AI service for enhanced suggestions
         """
         self.watson_service = watson_service
         self._suggestion_counter = 0
-    
+
     def generate_suggestions(
         self,
         findings: List[Finding],
@@ -44,48 +43,48 @@ class SuggestionGenerator:
     ) -> List[Suggestion]:
         """
         Generate improvement suggestions from findings.
-        
+
         Args:
             findings: List of code review findings
             use_ai: Whether to use AI for enhanced suggestions
-            
+
         Returns:
             List of generated suggestions
         """
         logger.info(f"Generating suggestions from {len(findings)} findings")
-        
+
         suggestions = []
-        
+
         # Group findings by file and type for pattern detection
         grouped_findings = self._group_findings(findings)
-        
+
         # Generate suggestions from individual findings
         for finding in findings:
             if finding.is_false_positive or finding.is_resolved:
                 continue
-            
+
             suggestion = self._generate_from_finding(finding)
             if suggestion:
                 suggestions.append(suggestion)
-        
+
         # Generate suggestions from patterns
         pattern_suggestions = self._generate_from_patterns(grouped_findings)
         suggestions.extend(pattern_suggestions)
-        
+
         # Enhance with AI if enabled
         if use_ai and self.watson_service:
             suggestions = self._enhance_with_ai(suggestions, findings)
-        
+
         logger.info(f"Generated {len(suggestions)} suggestions")
         return suggestions
-    
+
     def _group_findings(self, findings: List[Finding]) -> Dict:
         """
         Group findings by various dimensions for pattern detection.
-        
+
         Args:
             findings: List of findings
-            
+
         Returns:
             Dictionary with grouped findings
         """
@@ -95,25 +94,25 @@ class SuggestionGenerator:
             'by_severity': defaultdict(list),
             'by_source': defaultdict(list),
         }
-        
+
         for finding in findings:
             if finding.is_false_positive or finding.is_resolved:
                 continue
-            
+
             grouped['by_file'][str(finding.location.file_path)].append(finding)
             grouped['by_type'][finding.finding_type].append(finding)
             grouped['by_severity'][finding.severity].append(finding)
             grouped['by_source'][finding.source].append(finding)
-        
+
         return grouped
-    
+
     def _generate_from_finding(self, finding: Finding) -> Optional[Suggestion]:
         """
         Generate a suggestion from a single finding.
-        
+
         Args:
             finding: Code review finding
-            
+
         Returns:
             Suggestion or None if not applicable
         """
@@ -129,42 +128,42 @@ class SuggestionGenerator:
             FindingType.DUPLICATION: SuggestionCategory.REFACTORING,
             FindingType.BEST_PRACTICE: SuggestionCategory.BEST_PRACTICES,
         }
-        
+
         category = category_map.get(finding.finding_type, SuggestionCategory.CODE_QUALITY)
-        
+
         # Estimate effort and impact based on finding characteristics
         effort = self._estimate_effort(finding)
         impact = self._estimate_impact(finding)
-        
+
         # Generate implementation steps
         steps = self._generate_implementation_steps(finding)
-        
+
         # Create suggestion
         self._suggestion_counter += 1
         suggestion_id = f"SUGG-{self._suggestion_counter:04d}"
-        
+
         # Build title
         title = finding.title or f"Fix {finding.finding_type.value} issue"
-        
+
         # Build description
         description = finding.description
         if finding.explanation:
             description += f"\n\n{finding.explanation}"
-        
+
         # Build rationale
         rationale = finding.message
         if finding.impact:
             rationale += f"\n\nImpact: {finding.impact}"
-        
+
         # Build benefits
         benefits = self._generate_benefits(finding)
-        
+
         # Build considerations
         considerations = self._generate_considerations(finding)
-        
+
         # Build risks
         risks = self._generate_risks(finding)
-        
+
         suggestion = Suggestion(
             id=suggestion_id,
             title=title,
@@ -186,54 +185,54 @@ class SuggestionGenerator:
             confidence=finding.confidence,
             tags=[finding.finding_type.value, finding.severity.value],
         )
-        
+
         # Calculate priority score
         suggestion.priority_score = suggestion.calculate_priority_score()
-        
+
         return suggestion
-    
+
     def _generate_from_patterns(self, grouped_findings: Dict) -> List[Suggestion]:
         """
         Generate suggestions from patterns in grouped findings.
-        
+
         Args:
             grouped_findings: Findings grouped by various dimensions
-            
+
         Returns:
             List of pattern-based suggestions
         """
         suggestions = []
-        
+
         # Detect files with many issues
         for file_path, file_findings in grouped_findings['by_file'].items():
             if len(file_findings) >= 5:
                 suggestion = self._suggest_file_refactor(file_path, file_findings)
                 if suggestion:
                     suggestions.append(suggestion)
-        
+
         # Detect repeated security issues
         security_findings = grouped_findings['by_type'].get(FindingType.SECURITY, [])
         if len(security_findings) >= 3:
             suggestion = self._suggest_security_audit(security_findings)
             if suggestion:
                 suggestions.append(suggestion)
-        
+
         # Detect performance patterns
         perf_findings = grouped_findings['by_type'].get(FindingType.PERFORMANCE, [])
         if len(perf_findings) >= 3:
             suggestion = self._suggest_performance_review(perf_findings)
             if suggestion:
                 suggestions.append(suggestion)
-        
+
         # Detect documentation gaps
         doc_findings = grouped_findings['by_type'].get(FindingType.DOCUMENTATION, [])
         if len(doc_findings) >= 5:
             suggestion = self._suggest_documentation_initiative(doc_findings)
             if suggestion:
                 suggestions.append(suggestion)
-        
+
         return suggestions
-    
+
     def _suggest_file_refactor(
         self,
         file_path: str,
@@ -242,11 +241,11 @@ class SuggestionGenerator:
         """Suggest refactoring for files with many issues."""
         self._suggestion_counter += 1
         suggestion_id = f"SUGG-{self._suggestion_counter:04d}"
-        
+
         severity_counts = defaultdict(int)
         for finding in findings:
             severity_counts[finding.severity] += 1
-        
+
         return Suggestion(
             id=suggestion_id,
             title=f"Refactor {Path(file_path).name} to address multiple issues",
@@ -302,14 +301,14 @@ class SuggestionGenerator:
             confidence=0.85,
             tags=["refactoring", "high-priority", "multiple-issues"],
         )
-    
+
     def _suggest_security_audit(self, findings: List[Finding]) -> Optional[Suggestion]:
         """Suggest security audit for multiple security issues."""
         self._suggestion_counter += 1
         suggestion_id = f"SUGG-{self._suggestion_counter:04d}"
-        
+
         affected_files = set(str(f.location.file_path) for f in findings)
-        
+
         return Suggestion(
             id=suggestion_id,
             title="Conduct comprehensive security audit",
@@ -365,14 +364,14 @@ class SuggestionGenerator:
             confidence=0.90,
             tags=["security", "high-priority", "audit"],
         )
-    
+
     def _suggest_performance_review(self, findings: List[Finding]) -> Optional[Suggestion]:
         """Suggest performance review for multiple performance issues."""
         self._suggestion_counter += 1
         suggestion_id = f"SUGG-{self._suggestion_counter:04d}"
-        
+
         affected_files = set(str(f.location.file_path) for f in findings)
-        
+
         return Suggestion(
             id=suggestion_id,
             title="Conduct performance optimization review",
@@ -428,7 +427,7 @@ class SuggestionGenerator:
             confidence=0.80,
             tags=["performance", "optimization"],
         )
-    
+
     def _suggest_documentation_initiative(
         self,
         findings: List[Finding]
@@ -436,9 +435,9 @@ class SuggestionGenerator:
         """Suggest documentation initiative for multiple doc issues."""
         self._suggestion_counter += 1
         suggestion_id = f"SUGG-{self._suggestion_counter:04d}"
-        
+
         affected_files = set(str(f.location.file_path) for f in findings)
-        
+
         return Suggestion(
             id=suggestion_id,
             title="Launch documentation improvement initiative",
@@ -494,14 +493,14 @@ class SuggestionGenerator:
             confidence=0.75,
             tags=["documentation", "maintainability"],
         )
-    
+
     def _estimate_effort(self, finding: Finding) -> EffortLevel:
         """
         Estimate implementation effort for a finding.
-        
+
         Args:
             finding: Code review finding
-            
+
         Returns:
             Estimated effort level
         """
@@ -514,14 +513,14 @@ class SuggestionGenerator:
             return EffortLevel.MEDIUM
         else:
             return EffortLevel.LOW
-    
+
     def _estimate_impact(self, finding: Finding) -> ImpactLevel:
         """
         Estimate impact of fixing a finding.
-        
+
         Args:
             finding: Code review finding
-            
+
         Returns:
             Estimated impact level
         """
@@ -536,29 +535,29 @@ class SuggestionGenerator:
             return ImpactLevel.MEDIUM
         else:
             return ImpactLevel.LOW
-    
+
     def _generate_implementation_steps(
         self,
         finding: Finding
     ) -> List[ImplementationStep]:
         """
         Generate implementation steps for a finding.
-        
+
         Args:
             finding: Code review finding
-            
+
         Returns:
             List of implementation steps
         """
         steps = []
-        
+
         # Step 1: Review the issue
         steps.append(ImplementationStep(
             order=1,
             description=f"Review {finding.finding_type.value} issue in {finding.location.file_path.name}",
             estimated_time="15 minutes"
         ))
-        
+
         # Step 2: Implement fix
         if finding.recommendation:
             steps.append(ImplementationStep(
@@ -573,20 +572,20 @@ class SuggestionGenerator:
                 description=f"Implement fix for {finding.finding_type.value} issue",
                 estimated_time="30 minutes"
             ))
-        
+
         # Step 3: Test
         steps.append(ImplementationStep(
             order=3,
             description="Test the fix and verify issue is resolved",
             estimated_time="15 minutes"
         ))
-        
+
         return steps
-    
+
     def _generate_benefits(self, finding: Finding) -> List[str]:
         """Generate benefits of fixing a finding."""
         benefits = []
-        
+
         if finding.finding_type == FindingType.SECURITY:
             benefits.append("Improved security posture")
             benefits.append("Reduced vulnerability risk")
@@ -599,39 +598,39 @@ class SuggestionGenerator:
         elif finding.finding_type == FindingType.MAINTAINABILITY:
             benefits.append("Easier to maintain")
             benefits.append("Better code readability")
-        
+
         if finding.severity in [Severity.CRITICAL, Severity.HIGH]:
             benefits.append("Addresses high-priority issue")
-        
+
         return benefits
-    
+
     def _generate_considerations(self, finding: Finding) -> List[str]:
         """Generate considerations for fixing a finding."""
         considerations = []
-        
+
         considerations.append("Test thoroughly after making changes")
-        
+
         if finding.finding_type == FindingType.SECURITY:
             considerations.append("Review security implications")
             considerations.append("Consider security best practices")
         elif finding.finding_type == FindingType.PERFORMANCE:
             considerations.append("Profile before and after changes")
             considerations.append("Avoid premature optimization")
-        
+
         return considerations
-    
+
     def _generate_risks(self, finding: Finding) -> List[str]:
         """Generate risks of fixing a finding."""
         risks = []
-        
+
         if finding.severity in [Severity.CRITICAL, Severity.HIGH]:
             risks.append("Changes to critical code require careful testing")
-        
+
         if finding.finding_type == FindingType.PERFORMANCE:
             risks.append("Optimization may reduce code readability")
-        
+
         return risks
-    
+
     def _enhance_with_ai(
         self,
         suggestions: List[Suggestion],
@@ -639,19 +638,19 @@ class SuggestionGenerator:
     ) -> List[Suggestion]:
         """
         Enhance suggestions using AI.
-        
+
         Args:
             suggestions: Generated suggestions
             findings: Original findings
-            
+
         Returns:
             Enhanced suggestions
         """
         logger.info("Enhancing suggestions with AI")
-        
+
         # For now, return suggestions as-is
         # AI enhancement can be added in future iterations
-        
+
         return suggestions
 
 

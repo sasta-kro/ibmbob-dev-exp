@@ -19,7 +19,7 @@ logger = get_logger(__name__)
 class FindingClassifier:
     """
     Classifies and prioritizes code review findings.
-    
+
     Features:
     - Severity-based classification
     - Type-based grouping
@@ -27,29 +27,29 @@ class FindingClassifier:
     - Deduplication
     - Statistical analysis
     """
-    
+
     def __init__(self, config: Any):
         """
         Initialize finding classifier.
-        
+
         Args:
             config: Configuration object
         """
         self.config = config
         self.logger = logger
-    
+
     def classify_findings(self, findings: List[Finding]) -> Dict[str, Any]:
         """
         Classify and organize findings.
-        
+
         Args:
             findings: List of Finding objects
-            
+
         Returns:
             Dictionary with classified findings and statistics
         """
         self.logger.info(f"Classifying {len(findings)} findings")
-        
+
         result = {
             'total_findings': len(findings),
             'by_severity': self._group_by_severity(findings),
@@ -62,30 +62,30 @@ class FindingClassifier:
             'summary': FindingSummary.from_findings(findings),
             'statistics': self._calculate_statistics(findings)
         }
-        
+
         self.logger.info(f"Classification complete: {result['summary'].total_findings} findings")
         return result
-    
+
     def prioritize_findings(self, findings: List[Finding]) -> List[Finding]:
         """
         Sort findings by priority.
-        
+
         Priority factors:
         - Severity (critical > high > medium > low > info)
         - Confidence (higher is more important)
         - Type (security > bug > performance > others)
         - Actionability
-        
+
         Args:
             findings: List of Finding objects
-            
+
         Returns:
             Sorted list of findings by priority
         """
         def priority_score(finding: Finding) -> float:
             """Calculate priority score for a finding"""
             score = 0.0
-            
+
             # Severity score (0-50 points)
             severity_scores = {
                 Severity.CRITICAL: 50,
@@ -95,10 +95,10 @@ class FindingClassifier:
                 Severity.INFO: 0
             }
             score += severity_scores.get(finding.severity, 0)
-            
+
             # Confidence score (0-20 points)
             score += finding.confidence * 20
-            
+
             # Type score (0-20 points)
             type_scores = {
                 FindingType.SECURITY: 20,
@@ -112,36 +112,36 @@ class FindingClassifier:
                 FindingType.BEST_PRACTICE: 7
             }
             score += type_scores.get(finding.finding_type, 0)
-            
+
             # Actionability bonus (0-10 points)
             if finding.recommendation:
                 score += 5
             if finding.suggested_fix:
                 score += 5
-            
+
             return score
-        
+
         return sorted(findings, key=priority_score, reverse=True)
-    
+
     def deduplicate_findings(self, findings: List[Finding]) -> List[Finding]:
         """
         Remove duplicate findings.
-        
+
         Considers findings duplicate if they have:
         - Same file
         - Same line range
         - Same finding type
         - Similar title
-        
+
         Args:
             findings: List of Finding objects
-            
+
         Returns:
             Deduplicated list of findings
         """
         seen = {}
         unique = []
-        
+
         for finding in findings:
             # Create key for deduplication
             key = (
@@ -151,7 +151,7 @@ class FindingClassifier:
                 finding.finding_type,
                 finding.title.lower()[:50]  # First 50 chars of title
             )
-            
+
             if key not in seen:
                 seen[key] = finding
                 unique.append(finding)
@@ -162,27 +162,27 @@ class FindingClassifier:
                     unique.remove(existing)
                     unique.append(finding)
                     seen[key] = finding
-        
+
         removed = len(findings) - len(unique)
         if removed > 0:
             self.logger.info(f"Removed {removed} duplicate findings")
-        
+
         return unique
-    
+
     def _group_by_severity(self, findings: List[Finding]) -> Dict[str, List[Finding]]:
         """Group findings by severity level"""
         groups = defaultdict(list)
         for finding in findings:
             groups[finding.severity.value].append(finding)
         return dict(groups)
-    
+
     def _group_by_type(self, findings: List[Finding]) -> Dict[str, List[Finding]]:
         """Group findings by type"""
         groups = defaultdict(list)
         for finding in findings:
             groups[finding.finding_type.value].append(finding)
         return dict(groups)
-    
+
     def _group_by_file(self, findings: List[Finding]) -> Dict[str, List[Finding]]:
         """Group findings by file"""
         groups = defaultdict(list)
@@ -190,22 +190,22 @@ class FindingClassifier:
             file_path = str(finding.location.file_path)
             groups[file_path].append(finding)
         return dict(groups)
-    
+
     def _group_by_source(self, findings: List[Finding]) -> Dict[str, List[Finding]]:
         """Group findings by source tool"""
         groups = defaultdict(list)
         for finding in findings:
             groups[finding.source].append(finding)
         return dict(groups)
-    
+
     def _get_critical_findings(self, findings: List[Finding]) -> List[Finding]:
         """Get all critical severity findings"""
         return [f for f in findings if f.severity == Severity.CRITICAL]
-    
+
     def _get_high_priority_findings(self, findings: List[Finding]) -> List[Finding]:
         """
         Get high priority findings.
-        
+
         Includes:
         - Critical severity
         - High severity with high confidence
@@ -219,13 +219,13 @@ class FindingClassifier:
                 high_priority.append(finding)
             elif finding.finding_type == FindingType.SECURITY and finding.severity in [Severity.HIGH, Severity.MEDIUM]:
                 high_priority.append(finding)
-        
+
         return high_priority
-    
+
     def _identify_quick_wins(self, findings: List[Finding]) -> List[Finding]:
         """
         Identify quick win findings.
-        
+
         Quick wins are:
         - Low to medium severity
         - High confidence
@@ -242,12 +242,12 @@ class FindingClassifier:
                 FindingType.DOCUMENTATION,
                 FindingType.BEST_PRACTICE
             ]
-            
+
             if is_low_severity and has_fix and (high_confidence or easy_type):
                 quick_wins.append(finding)
-        
+
         return quick_wins
-    
+
     def _calculate_statistics(self, findings: List[Finding]) -> Dict[str, Any]:
         """Calculate statistical information about findings"""
         if not findings:
@@ -260,37 +260,37 @@ class FindingClassifier:
                 'actionable_count': 0,
                 'security_critical_count': 0
             }
-        
+
         # Count files affected
         files_affected = len(set(str(f.location.file_path) for f in findings))
-        
+
         # Calculate average confidence
         avg_confidence = sum(f.confidence for f in findings) / len(findings)
-        
+
         # Severity distribution
         severity_dist = {}
         for severity in Severity:
             count = sum(1 for f in findings if f.severity == severity)
             if count > 0:
                 severity_dist[severity.value] = count
-        
+
         # Type distribution
         type_dist = {}
         for finding_type in FindingType:
             count = sum(1 for f in findings if f.finding_type == finding_type)
             if count > 0:
                 type_dist[finding_type.value] = count
-        
+
         # Actionable findings (have recommendations)
         actionable = sum(1 for f in findings if f.recommendation)
-        
+
         # Security critical (security + high/critical severity)
         security_critical = sum(
             1 for f in findings
             if f.finding_type == FindingType.SECURITY
             and f.severity in [Severity.CRITICAL, Severity.HIGH]
         )
-        
+
         return {
             'total': len(findings),
             'average_confidence': round(avg_confidence, 2),
@@ -301,7 +301,7 @@ class FindingClassifier:
             'security_critical_count': security_critical,
             'findings_per_file': round(len(findings) / files_affected, 2) if files_affected > 0 else 0
         }
-    
+
     def filter_findings(
         self,
         findings: List[Finding],
@@ -313,7 +313,7 @@ class FindingClassifier:
     ) -> List[Finding]:
         """
         Filter findings based on criteria.
-        
+
         Args:
             findings: List of findings to filter
             min_severity: Minimum severity level
@@ -321,12 +321,12 @@ class FindingClassifier:
             min_confidence: Minimum confidence score
             exclude_resolved: Exclude resolved findings
             exclude_false_positives: Exclude false positives
-            
+
         Returns:
             Filtered list of findings
         """
         filtered = findings
-        
+
         # Filter by severity
         if min_severity:
             severity_order = [
@@ -341,23 +341,23 @@ class FindingClassifier:
                 f for f in filtered
                 if severity_order.index(f.severity) >= min_index
             ]
-        
+
         # Filter by type
         if finding_types:
             filtered = [f for f in filtered if f.finding_type in finding_types]
-        
+
         # Filter by confidence
         if min_confidence is not None:
             filtered = [f for f in filtered if f.confidence >= min_confidence]
-        
+
         # Filter resolved
         if exclude_resolved:
             filtered = [f for f in filtered if not f.is_resolved]
-        
+
         # Filter false positives
         if exclude_false_positives:
             filtered = [f for f in filtered if not f.is_false_positive]
-        
+
         return filtered
 
 # Made with Bob

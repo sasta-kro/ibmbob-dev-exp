@@ -7,12 +7,12 @@ Welcome page with project selection and recent projects.
 from typing import Optional, Callable, List
 import flet as ft
 from ..theme import AppTheme
-from ..utils import create_empty_state, create_stat_card
+from ..utils import create_empty_state
 
 
 class HomePage(ft.Container):
     """Home page component"""
-    
+
     def __init__(
         self,
         on_new_analysis: Callable,
@@ -20,20 +20,20 @@ class HomePage(ft.Container):
     ):
         """
         Initialize home page
-        
+
         Args:
             on_new_analysis: Callback for starting new analysis
             recent_projects: List of recent project data
         """
         self.on_new_analysis = on_new_analysis
         self.recent_projects = recent_projects or []
-        
+
         super().__init__(
             content=self._build_content(),
             padding=AppTheme.SPACING_LARGE,
             expand=True
         )
-    
+
     def _build_content(self) -> ft.Column:
         """Build home page content"""
         # Welcome header
@@ -56,10 +56,10 @@ class HomePage(ft.Container):
             ),
             padding=ft.Padding(bottom=AppTheme.SPACING_XLARGE)
         )
-        
+
         # New analysis button
         new_analysis_button = ft.Container(
-            content=ft.ElevatedButton(
+            content=ft.Button(
                 content=ft.Row(
                     controls=[
                         ft.Icon(ft.Icons.ADD_CIRCLE_OUTLINE, size=24),
@@ -88,29 +88,29 @@ class HomePage(ft.Container):
             alignment=ft.Alignment(0, 0),
             padding=ft.Padding(bottom=AppTheme.SPACING_XLARGE)
         )
-        
+
         controls = [header, new_analysis_button]
-        
+
         # Recent projects section
         if self.recent_projects:
             controls.append(self._build_recent_projects())
         else:
             controls.append(self._build_empty_state())
-        
+
         # Features section
         controls.append(self._build_features_section())
-        
+
         return ft.Column(
             controls=controls,
             spacing=0,
             scroll=ft.ScrollMode.AUTO,
             expand=True
         )
-    
+
     def _build_recent_projects(self) -> ft.Container:
         """Build recent projects section"""
         project_cards = []
-        
+
         for project in self.recent_projects[:5]:  # Show max 5 recent
             card = ft.Card(
                 content=ft.Container(
@@ -176,7 +176,7 @@ class HomePage(ft.Container):
                 elevation=2
             )
             project_cards.append(card)
-        
+
         return ft.Container(
             content=ft.Column(
                 controls=[
@@ -196,7 +196,7 @@ class HomePage(ft.Container):
             ),
             padding=ft.Padding(bottom=AppTheme.SPACING_XLARGE)
         )
-    
+
     def _build_empty_state(self) -> ft.Container:
         """Build empty state when no recent projects"""
         return ft.Container(
@@ -211,7 +211,7 @@ class HomePage(ft.Container):
             ),
             alignment=ft.Alignment(0, 0)
         )
-    
+
     def _build_features_section(self) -> ft.Container:
         """Build features showcase section"""
         features = [
@@ -236,7 +236,7 @@ class HomePage(ft.Container):
                 "description": "Get actionable improvement recommendations"
             }
         ]
-        
+
         feature_cards = []
         for feature in features:
             card = ft.Card(
@@ -270,7 +270,7 @@ class HomePage(ft.Container):
                 elevation=1
             )
             feature_cards.append(card)
-        
+
         return ft.Container(
             content=ft.Column(
                 controls=[
@@ -292,12 +292,12 @@ class HomePage(ft.Container):
             ),
             padding=ft.Padding(top=AppTheme.SPACING_XLARGE)
         )
-    
+
     def _open_project(self, project: dict):
         """Open a recent project"""
         # This would be implemented to load the project
         pass
-    
+
     def refresh(self, recent_projects: Optional[List[dict]] = None):
         """Refresh the page with updated data"""
         if recent_projects is not None:

@@ -4,14 +4,14 @@ Chart Components
 Simple chart components for data visualization.
 """
 
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 import flet as ft
 from ..theme import AppTheme
 
 
 class PieChart(ft.Container):
     """Simple pie chart component"""
-    
+
     def __init__(
         self,
         title: str,
@@ -20,7 +20,7 @@ class PieChart(ft.Container):
     ):
         """
         Initialize pie chart
-        
+
         Args:
             title: Chart title
             data: Dictionary of label to value
@@ -29,73 +29,55 @@ class PieChart(ft.Container):
         self.title = title
         self.data = data
         self.colors = colors or {}
-        
+
         super().__init__(
             content=self._build_content(),
             padding=16
         )
-    
+
     def _build_content(self) -> ft.Column:
-        """Build chart content"""
         total = sum(self.data.values())
-        
-        # Title
-        title_text = ft.Text(
-            self.title,
-            size=16,
-            weight=ft.FontWeight.BOLD,
-            color=AppTheme.TEXT_PRIMARY
-        )
-        
-        # Legend items
+
+        title_text = ft.Text(self.title, size=16, weight=ft.FontWeight.BOLD, color=AppTheme.TEXT_PRIMARY)
+
+        default_colors = [AppTheme.PRIMARY, AppTheme.SECONDARY, AppTheme.SUCCESS, AppTheme.WARNING, AppTheme.ERROR,
+                          "#78909C", "#AB47BC", "#26A69A", "#EC407A", "#8D6E63"]
+
+        color_for = {}
+        segments = []
         legend_items = []
-        default_colors = [
-            AppTheme.PRIMARY,
-            AppTheme.SECONDARY,
-            AppTheme.SUCCESS,
-            AppTheme.WARNING,
-            AppTheme.ERROR
-        ]
-        
+
         for i, (label, value) in enumerate(self.data.items()):
             color = self.colors.get(label, default_colors[i % len(default_colors)])
+            color_for[label] = color
             percentage = (value / total * 100) if total > 0 else 0
-            
-            legend_item = ft.Row(
-                controls=[
-                    ft.Container(
-                        width=16,
-                        height=16,
-                        bgcolor=color,
-                        border_radius=4
-                    ),
-                    ft.Text(
-                        f"{label}: {value} ({percentage:.1f}%)",
-                        size=14,
-                        color=AppTheme.TEXT_PRIMARY,
-                        expand=True
-                    )
-                ],
-                spacing=8
-            )
-            legend_items.append(legend_item)
-        
-        return ft.Column(
-            controls=[
-                title_text,
-                ft.Container(height=16),
-                ft.Column(
-                    controls=legend_items,
-                    spacing=8
-                )
-            ],
-            spacing=0
-        )
+
+            if value > 0:
+                segments.append(ft.Container(bgcolor=color, expand=value, height=14, tooltip=f"{label}: {value}"))
+
+            legend_items.append(ft.Row(controls=[
+                ft.Container(width=12, height=12, bgcolor=color, border_radius=3),
+                ft.Text(f"{label}", size=12, color=AppTheme.TEXT_PRIMARY),
+                ft.Text(f"{value} ({percentage:.0f}%)", size=12, color=AppTheme.TEXT_SECONDARY),
+            ], spacing=6))
+
+        stacked_bar = ft.Container(
+            content=ft.Row(controls=segments, spacing=1, expand=True),
+            border_radius=7, clip_behavior=ft.ClipBehavior.HARD_EDGE, height=14,
+        ) if segments else ft.Container(height=14, bgcolor="#EEEEEE", border_radius=7)
+
+        return ft.Column(controls=[
+            title_text,
+            ft.Container(height=12),
+            stacked_bar,
+            ft.Container(height=10),
+            ft.Column(controls=legend_items, spacing=4),
+        ], spacing=0)
 
 
 class BarChart(ft.Container):
     """Simple bar chart component"""
-    
+
     def __init__(
         self,
         title: str,
@@ -105,7 +87,7 @@ class BarChart(ft.Container):
     ):
         """
         Initialize bar chart
-        
+
         Args:
             title: Chart title
             data: Dictionary of label to value
@@ -116,74 +98,43 @@ class BarChart(ft.Container):
         self.data = data
         self.color = color
         self.max_value = max_value or max(data.values()) if data else 100
-        
+
         super().__init__(
             content=self._build_content(),
             padding=16
         )
-    
+
     def _build_content(self) -> ft.Column:
-        """Build chart content"""
-        # Title
-        title_text = ft.Text(
-            self.title,
-            size=16,
-            weight=ft.FontWeight.BOLD,
-            color=AppTheme.TEXT_PRIMARY
-        )
-        
-        # Bars
+        title_text = ft.Text(self.title, size=16, weight=ft.FontWeight.BOLD, color=AppTheme.TEXT_PRIMARY)
+
         bars = []
         for label, value in self.data.items():
-            bar_width = (value / self.max_value * 100) if self.max_value > 0 else 0
-            
-            bar_row = ft.Column(
-                controls=[
-                    ft.Row(
-                        controls=[
-                            ft.Text(
-                                label,
-                                size=12,
-                                color=AppTheme.TEXT_SECONDARY,
-                                width=100
-                            ),
-                            ft.Container(
-                                content=ft.Text(
-                                    str(value),
-                                    size=12,
-                                    color=AppTheme.TEXT_ON_PRIMARY
-                                ),
-                                bgcolor=self.color,
-                                width=bar_width * 2,
-                                height=24,
-                                border_radius=4,
-                                padding=ft.Padding(left=8, right=8),
-                                alignment=ft.Alignment(-1, 0)
-                            )
-                        ],
-                        spacing=8
-                    )
-                ],
-                spacing=4
-            )
+            fraction = (value / self.max_value) if self.max_value > 0 else 0
+
+            bar_row = ft.Row(controls=[
+                ft.Text(label.capitalize(), size=12, color=AppTheme.TEXT_SECONDARY, width=100),
+                ft.Container(
+                    content=ft.Row(controls=[
+                        ft.Container(bgcolor=self.color, expand=max(int(fraction * 100), 1),
+                                     height=22, border_radius=4),
+                        ft.Container(expand=max(100 - int(fraction * 100), 1)),
+                    ], spacing=0, expand=True),
+                    expand=True,
+                ),
+                ft.Text(str(value), size=12, color=AppTheme.TEXT_PRIMARY, weight=ft.FontWeight.BOLD, width=40),
+            ], spacing=8)
             bars.append(bar_row)
-        
-        return ft.Column(
-            controls=[
-                title_text,
-                ft.Container(height=16),
-                ft.Column(
-                    controls=bars,
-                    spacing=8
-                )
-            ],
-            spacing=0
-        )
+
+        return ft.Column(controls=[
+            title_text,
+            ft.Container(height=12),
+            ft.Column(controls=bars, spacing=6),
+        ], spacing=0)
 
 
 class MetricCard(ft.Card):
     """Metric display card"""
-    
+
     def __init__(
         self,
         title: str,
@@ -195,7 +146,7 @@ class MetricCard(ft.Card):
     ):
         """
         Initialize metric card
-        
+
         Args:
             title: Metric title
             value: Metric value
@@ -210,12 +161,12 @@ class MetricCard(ft.Card):
         self.color = color
         self.subtitle = subtitle
         self.trend = trend
-        
+
         super().__init__(
             content=self._build_content(),
             elevation=2
         )
-    
+
     def _build_content(self) -> ft.Container:
         """Build card content"""
         # Icon and value
@@ -246,13 +197,13 @@ class MetricCard(ft.Card):
             ],
             spacing=16
         )
-        
+
         controls = [main_row]
-        
+
         # Subtitle or trend
         if self.subtitle or self.trend:
             bottom_controls = []
-            
+
             if self.trend:
                 trend_icon = ft.Icons.TRENDING_UP if self.trend == "up" else \
                             ft.Icons.TRENDING_DOWN if self.trend == "down" else \
@@ -260,11 +211,11 @@ class MetricCard(ft.Card):
                 trend_color = AppTheme.SUCCESS if self.trend == "up" else \
                              AppTheme.ERROR if self.trend == "down" else \
                              AppTheme.TEXT_SECONDARY
-                
+
                 bottom_controls.append(
                     ft.Icon(trend_icon, size=16, color=trend_color)
                 )
-            
+
             if self.subtitle:
                 bottom_controls.append(
                     ft.Text(
@@ -274,7 +225,7 @@ class MetricCard(ft.Card):
                         expand=True
                     )
                 )
-            
+
             controls.append(
                 ft.Container(height=8)
             )
@@ -284,7 +235,7 @@ class MetricCard(ft.Card):
                     spacing=8
                 )
             )
-        
+
         return ft.Container(
             content=ft.Column(
                 controls=controls,
@@ -296,7 +247,7 @@ class MetricCard(ft.Card):
 
 class ProgressRing(ft.Container):
     """Progress ring with percentage"""
-    
+
     def __init__(
         self,
         value: float,
@@ -306,7 +257,7 @@ class ProgressRing(ft.Container):
     ):
         """
         Initialize progress ring
-        
+
         Args:
             value: Progress value (0-100)
             size: Ring size
@@ -317,13 +268,13 @@ class ProgressRing(ft.Container):
         self.size = size
         self.color = color
         self.label = label
-        
+
         super().__init__(
             content=self._build_content(),
             width=size,
             height=size
         )
-    
+
     def _build_content(self) -> ft.Stack:
         """Build progress ring content"""
         controls = [
@@ -355,7 +306,7 @@ class ProgressRing(ft.Container):
                 alignment=ft.Alignment(0, 0)
             )
         ]
-        
+
         return ft.Stack(controls=controls)
 
 # Made with Bob

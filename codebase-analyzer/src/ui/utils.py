@@ -4,7 +4,7 @@ UI Utility Functions
 Helper functions for UI components and formatting.
 """
 
-from typing import Optional, List, Dict, Any
+from typing import Optional
 from datetime import datetime
 import flet as ft
 
@@ -63,7 +63,7 @@ def create_badge(
     """Create a badge component"""
     font_size = 10 if size == "small" else 12
     padding = 4 if size == "small" else 6
-    
+
     return ft.Container(
         content=ft.Text(
             text,
@@ -149,10 +149,10 @@ def create_empty_state(
         ft.Text(title, size=20, weight=ft.FontWeight.BOLD, color="#757575"),
         ft.Text(description, size=14, color="#9E9E9E", text_align=ft.TextAlign.CENTER)
     ]
-    
+
     if action_text and on_action:
         controls.append(
-            ft.ElevatedButton(
+            ft.Button(
                 content=action_text,
                 on_click=on_action,
                 style=ft.ButtonStyle(
@@ -160,7 +160,7 @@ def create_empty_state(
                 )
             )
         )
-    
+
     return ft.Column(
         controls=controls,
         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
@@ -178,16 +178,16 @@ def create_error_display(
         ft.Text("Error", size=20, weight=ft.FontWeight.BOLD, color="#F44336"),
         ft.Text(error_message, size=14, color="#757575", text_align=ft.TextAlign.CENTER)
     ]
-    
+
     if on_retry:
         controls.append(
-            ft.ElevatedButton(
+            ft.Button(
                 content="Retry",
                 on_click=on_retry,
                 icon=ft.Icons.REFRESH
             )
         )
-    
+
     return ft.Column(
         controls=controls,
         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
@@ -208,15 +208,13 @@ def show_snackbar(
         "warning": "#FF9800",
         "info": "#2196F3"
     }
-    
+
     snackbar = ft.SnackBar(
         content=ft.Text(message, color="#FFFFFF"),
         bgcolor=colors.get(severity, colors["info"]),
         duration=duration
     )
-    page.snack_bar = snackbar
-    snackbar.open = True
-    page.update()
+    page.show_dialog(snackbar)
 
 
 def create_stat_card(
@@ -242,12 +240,12 @@ def create_stat_card(
             spacing=16
         )
     ]
-    
+
     if subtitle:
         content_controls.append(
             ft.Text(subtitle, size=12, color="#9E9E9E")
         )
-    
+
     return ft.Card(
         content=ft.Container(
             content=ft.Column(
@@ -259,4 +257,34 @@ def create_stat_card(
         elevation=2
     )
 
-# Made with Bob
+def create_stacked_bar(
+    data: dict,
+    colors: dict,
+    height: int = 10,
+    border_radius: int = 5,
+) -> ft.Container:
+    """Horizontal stacked bar — segments proportional to values."""
+    total = sum(data.values())
+    if total == 0:
+        return ft.Container(height=height, bgcolor="#EEEEEE", border_radius=border_radius)
+
+    segments = []
+    for label, value in data.items():
+        if value <= 0:
+            continue
+        color = colors.get(label, "#9E9E9E")
+        segments.append(
+            ft.Container(
+                bgcolor=color,
+                expand=value,
+                height=height,
+                tooltip=f"{label}: {value}",
+            )
+        )
+
+    return ft.Container(
+        content=ft.Row(controls=segments, spacing=1, expand=True),
+        border_radius=border_radius,
+        clip_behavior=ft.ClipBehavior.HARD_EDGE,
+        height=height,
+    )

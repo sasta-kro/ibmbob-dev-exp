@@ -5,7 +5,7 @@ Reusable UI components for the application.
 """
 
 from .cards import FindingCard, SuggestionCard, ProgressCard
-from .filters import FilterPanel, SortControl, SearchBar
+from .filters import FilterPanel, SortControl, SearchBar, ChipFilterRow
 from .charts import PieChart, BarChart, MetricCard, ProgressRing
 
 __all__ = [
@@ -15,6 +15,7 @@ __all__ = [
     "FilterPanel",
     "SortControl",
     "SearchBar",
+    "ChipFilterRow",
     "PieChart",
     "BarChart",
     "MetricCard",

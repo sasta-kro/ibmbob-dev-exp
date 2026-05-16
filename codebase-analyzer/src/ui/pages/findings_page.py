@@ -1,209 +1,216 @@
 """
-Findings Page
-
-Display and filter code review findings.
+Findings Page — display and filter code review findings.
 """
 
 from typing import List, Optional, Callable
 import flet as ft
 from ...models.finding import Finding
 from ..theme import AppTheme
-from ..components import FindingCard, FilterPanel, SortControl
-from ..utils import create_empty_state
+from ..components import FindingCard, ChipFilterRow, SortControl
+from ..utils import create_empty_state, create_badge, create_stacked_bar
+
+SEVERITY_COLORS = {
+    "critical": AppTheme.CRITICAL,
+    "high": AppTheme.HIGH,
+    "medium": AppTheme.MEDIUM,
+    "low": AppTheme.LOW,
+    "info": AppTheme.INFO_SEVERITY,
+}
+
+TYPE_COLORS = {
+    "bug": "#D32F2F",
+    "security": "#7B1FA2",
+    "performance": "#F57C00",
+    "style": "#0288D1",
+    "maintainability": "#00796B",
+    "documentation": "#5D4037",
+    "complexity": "#C62828",
+    "duplication": "#AD1457",
+    "best_practice": "#1565C0",
+}
 
 
 class FindingsPage(ft.Container):
-    """Findings page component"""
-    
+
     def __init__(
         self,
         findings: Optional[List[Finding]] = None,
         on_resolve: Optional[Callable] = None,
         on_ignore: Optional[Callable] = None
     ):
-        """
-        Initialize findings page
-        
-        Args:
-            findings: List of findings to display
-            on_resolve: Callback when finding is resolved
-            on_ignore: Callback when finding is ignored
-        """
         self.all_findings = findings or []
         self.filtered_findings = self.all_findings.copy()
         self.on_resolve = on_resolve
         self.on_ignore = on_ignore
-        
+        self._severity_filter: List[str] = []
+        self._type_filter: List[str] = []
+        self._search_query = ""
+        self._sort_option = "Severity"
+        self._sort_asc = True
+
         super().__init__(
             content=self._build_content(),
             padding=AppTheme.SPACING_LARGE,
             expand=True
         )
-    
-    def _build_content(self) -> ft.Row:
-        """Build findings page content"""
+
+    def _build_content(self) -> ft.Column:
         if not self.all_findings:
-            return ft.Row(
-                controls=[
-                    create_empty_state(
-                        icon=ft.Icons.CHECK_CIRCLE,
-                        title="No Findings",
-                        description="No code review findings to display"
-                    )
-                ],
-                alignment=ft.MainAxisAlignment.CENTER,
-                expand=True
-            )
-        
-        # Filter panel
-        filter_options = {
-            "severity": ["critical", "high", "medium", "low", "info"],
-            "type": ["bug", "security", "performance", "style", "maintainability", "documentation"]
-        }
-        
-        filter_panel = FilterPanel(
-            filters=filter_options,
-            on_filter_change=self._on_filter_change,
-            search_enabled=True,
-            on_search=self._on_search
-        )
-        
-        # Main content area
-        main_content = self._build_findings_list()
-        
-        return ft.Row(
-            controls=[
-                ft.Container(
-                    content=filter_panel,
-                    width=300
-                ),
-                ft.VerticalDivider(width=1, color=AppTheme.DIVIDER_COLOR),
-                ft.Container(
-                    content=main_content,
-                    expand=True
+            return ft.Column(controls=[
+                create_empty_state(
+                    icon=ft.Icons.CHECK_CIRCLE,
+                    title="No Findings",
+                    description="No code review findings to display"
                 )
-            ],
-            spacing=0,
-            expand=True
+            ], horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                alignment=ft.MainAxisAlignment.CENTER, expand=True)
+
+        # Stats bar
+        severity_counts = {}
+        for f in self.all_findings:
+            s = f.severity.value
+            severity_counts[s] = severity_counts.get(s, 0) + 1
+
+        stat_chips = []
+        for sev in ["critical", "high", "medium", "low", "info"]:
+            count = severity_counts.get(sev, 0)
+            if count > 0:
+                stat_chips.append(ft.Container(
+                    content=ft.Row(controls=[
+                        ft.Container(width=8, height=8, bgcolor=SEVERITY_COLORS.get(sev, "#999"),
+                                     border_radius=4),
+                        ft.Text(f"{sev.capitalize()} {count}", size=12, color=AppTheme.TEXT_PRIMARY,
+                                weight=ft.FontWeight.BOLD),
+                    ], spacing=6),
+                    padding=ft.Padding(left=10, right=10, top=4, bottom=4),
+                    border=ft.Border.all(1, SEVERITY_COLORS.get(sev, "#999")),
+                    border_radius=12,
+                ))
+
+        resolved = sum(1 for f in self.all_findings if f.is_resolved)
+        ignored = sum(1 for f in self.all_findings if f.is_false_positive)
+        if resolved or ignored:
+            stat_chips.append(ft.Container(expand=True))
+            if resolved:
+                stat_chips.append(ft.Text(f"{resolved} resolved", size=11, color=AppTheme.SUCCESS))
+            if ignored:
+                stat_chips.append(ft.Text(f"{ignored} ignored", size=11, color=AppTheme.TEXT_DISABLED))
+
+        stats_row = ft.Row(controls=stat_chips, spacing=8, wrap=True)
+
+        stacked = create_stacked_bar(severity_counts, SEVERITY_COLORS, height=6)
+
+        # Header
+        self._search_field = ft.TextField(
+            hint_text="Search findings...", prefix_icon=ft.Icons.SEARCH,
+            on_change=self._on_search, dense=True, border_color=AppTheme.BORDER_COLOR,
+            width=280, text_size=13,
         )
-    
-    def _build_findings_list(self) -> ft.Column:
-        """Build findings list"""
-        # Header with count and sort
-        header = ft.Row(
-            controls=[
-                ft.Text(
-                    f"Findings ({len(self.filtered_findings)})",
-                    size=AppTheme.FONT_SIZE_TITLE,
-                    weight=ft.FontWeight.BOLD,
-                    color=AppTheme.TEXT_PRIMARY,
-                    expand=True
-                ),
-                SortControl(
-                    options=["Severity", "Category", "File"],
-                    on_sort_change=self._on_sort_change,
-                    default_option="Severity"
-                )
-            ],
-            alignment=ft.MainAxisAlignment.SPACE_BETWEEN
-        )
-        
-        # Findings cards
+        header = ft.Row(controls=[
+            ft.Text(f"Findings ({len(self.filtered_findings)})", size=AppTheme.FONT_SIZE_TITLE,
+                    weight=ft.FontWeight.BOLD, color=AppTheme.TEXT_PRIMARY),
+            ft.Container(expand=True),
+            self._search_field,
+        ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+
+        # Chip filters
+        severity_options = sorted({f.severity.value for f in self.all_findings})
+        type_options = sorted({f.finding_type.value for f in self.all_findings})
+
+        self._severity_chips = ChipFilterRow(
+            label="Severity:", options=severity_options,
+            color_map=SEVERITY_COLORS, on_change=self._on_severity_filter)
+        self._type_chips = ChipFilterRow(
+            label="Type:", options=type_options,
+            color_map=TYPE_COLORS, on_change=self._on_type_filter)
+
+        sort_control = SortControl(
+            options=["Severity", "Category", "File"],
+            on_sort_change=self._on_sort_change, default_option="Severity")
+
+        filter_row = ft.Row(controls=[
+            self._severity_chips,
+            ft.Container(width=16),
+            self._type_chips,
+            ft.Container(expand=True),
+            sort_control,
+        ], spacing=0, wrap=True)
+
+        # Findings list
+        cards = [FindingCard(finding=f, on_resolve=self.on_resolve, on_ignore=self.on_ignore)
+                 for f in self.filtered_findings]
+
+        self._list_view = ft.ListView(controls=cards, spacing=10,
+                                       padding=ft.Padding(top=8, bottom=8, left=0, right=0), expand=True)
+
         if not self.filtered_findings:
-            findings_content = create_empty_state(
-                icon=ft.Icons.FILTER_ALT_OFF,
-                title="No Matching Findings",
-                description="Adjust filters to broaden the result set"
-            )
-        else:
-            finding_cards = [
-                FindingCard(
-                    finding=finding,
-                    on_resolve=self.on_resolve,
-                    on_ignore=self.on_ignore
-                )
-                for finding in self.filtered_findings
-            ]
-            
-            findings_content = ft.ListView(
-                controls=finding_cards,
-                spacing=12,
-                padding=AppTheme.SPACING_MEDIUM,
-                expand=True
-            )
-        
-        return ft.Column(
-            controls=[
-                header,
-                ft.Container(height=AppTheme.SPACING_LARGE),
-                findings_content
-            ],
-            spacing=0,
-            expand=True
-        )
-    
-    def _on_filter_change(self, filters: dict):
-        """Handle filter changes"""
+            self._list_view = ft.Column(controls=[
+                create_empty_state(icon=ft.Icons.FILTER_ALT_OFF, title="No Matching Findings",
+                                   description="Adjust filters to see results")
+            ], horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                alignment=ft.MainAxisAlignment.CENTER, expand=True)
+
+        return ft.Column(controls=[
+            header,
+            ft.Container(height=8),
+            stats_row,
+            stacked,
+            ft.Container(height=10),
+            filter_row,
+            ft.Divider(height=1, color=AppTheme.DIVIDER_COLOR),
+            self._list_view,
+        ], spacing=6, expand=True)
+
+    def _apply_filters(self):
         self.filtered_findings = self.all_findings.copy()
-        
-        if filters.get("severity"):
-            self.filtered_findings = [
-                f for f in self.filtered_findings
-                if f.severity.value in filters["severity"]
-            ]
-        
-        if filters.get("type"):
-            self.filtered_findings = [
-                f for f in self.filtered_findings
-                if f.finding_type.value in filters["type"]
-            ]
-        
-        self.content = self._build_content()
-        self.update()
-    
-    def _on_search(self, query: str):
-        """Handle search query"""
-        if not query:
-            self.filtered_findings = self.all_findings.copy()
-        else:
-            query_lower = query.lower()
-            self.filtered_findings = [
-                f for f in self.all_findings
-                if query_lower in f.title.lower() or
-                   query_lower in f.description.lower() or
-                   query_lower in str(f.location.file_path).lower()
-            ]
-        
-        self.content = self._build_content()
-        self.update()
-    
-    def _on_sort_change(self, option: str, ascending: bool):
-        """Handle sort changes"""
-        if option == "Severity":
-            severity_order = {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}
-            self.filtered_findings.sort(
-                key=lambda f: severity_order.get(f.severity.value, 5),
-                reverse=not ascending
-            )
-        elif option == "Category":
-            self.filtered_findings.sort(
-                key=lambda f: f.finding_type.value,
-                reverse=not ascending
-            )
-        elif option == "File":
-            self.filtered_findings.sort(
-                key=lambda f: str(f.location.file_path),
-                reverse=not ascending
-            )
-        
-        self.content = self._build_content()
-        self.update()
-    
-    def refresh(self, findings: List[Finding]):
-        """Refresh with new findings"""
-        self.all_findings = findings
-        self.filtered_findings = findings.copy()
+
+        if self._severity_filter:
+            self.filtered_findings = [f for f in self.filtered_findings
+                                       if f.severity.value in self._severity_filter]
+        if self._type_filter:
+            self.filtered_findings = [f for f in self.filtered_findings
+                                       if f.finding_type.value in self._type_filter]
+        if self._search_query:
+            q = self._search_query.lower()
+            self.filtered_findings = [f for f in self.filtered_findings
+                                       if q in f.title.lower() or q in f.description.lower()
+                                       or q in str(f.location.file_path).lower()]
+        self._apply_sort()
         self.content = self._build_content()
         self.update()
 
-# Made with Bob
+    def _apply_sort(self):
+        if self._sort_option == "Severity":
+            order = {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}
+            self.filtered_findings.sort(key=lambda f: order.get(f.severity.value, 5),
+                                         reverse=not self._sort_asc)
+        elif self._sort_option == "Category":
+            self.filtered_findings.sort(key=lambda f: f.finding_type.value, reverse=not self._sort_asc)
+        elif self._sort_option == "File":
+            self.filtered_findings.sort(key=lambda f: str(f.location.file_path), reverse=not self._sort_asc)
+
+    def _on_severity_filter(self, selected: List[str]):
+        self._severity_filter = selected
+        self._apply_filters()
+
+    def _on_type_filter(self, selected: List[str]):
+        self._type_filter = selected
+        self._apply_filters()
+
+    def _on_search(self, e):
+        self._search_query = e.control.value or ""
+        self._apply_filters()
+
+    def _on_sort_change(self, option: str, ascending: bool):
+        self._sort_option = option
+        self._sort_asc = ascending
+        self._apply_filters()
+
+    def refresh(self, findings: List[Finding]):
+        self.all_findings = findings
+        self.filtered_findings = findings.copy()
+        self._severity_filter = []
+        self._type_filter = []
+        self._search_query = ""
+        self.content = self._build_content()
+        self.update()

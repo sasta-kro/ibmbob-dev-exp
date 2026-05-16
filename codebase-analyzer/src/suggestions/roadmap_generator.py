@@ -15,20 +15,20 @@ logger = logging.getLogger(__name__)
 class RoadmapGenerator:
     """
     Generate improvement roadmaps from suggestions.
-    
+
     Creates structured roadmaps with prioritized suggestions,
     implementation timelines, and progress tracking.
     """
-    
+
     def __init__(self, prioritizer: Optional[Prioritizer] = None):
         """
         Initialize roadmap generator.
-        
+
         Args:
             prioritizer: Optional prioritizer instance
         """
         self.prioritizer = prioritizer or Prioritizer()
-    
+
     def generate_roadmap(
         self,
         suggestions: List[Suggestion],
@@ -37,33 +37,33 @@ class RoadmapGenerator:
     ) -> Dict:
         """
         Generate improvement roadmap.
-        
+
         Args:
             suggestions: List of suggestions
             project_name: Name of the project
             output_dir: Directory to save roadmap files
-            
+
         Returns:
             Dictionary with roadmap data
         """
         logger.info(f"Generating roadmap for {len(suggestions)} suggestions")
-        
+
         # Prioritize suggestions
         prioritized = self.prioritizer.prioritize_suggestions(suggestions)
-        
+
         # Create implementation order
         ordered = self.prioritizer.create_implementation_order(prioritized)
-        
+
         # Get categorized recommendations
         recommendations = self.prioritizer.get_recommendations(prioritized)
-        
+
         # Calculate effort and impact
         effort_stats = self.prioritizer.calculate_total_effort(prioritized)
         impact_stats = self.prioritizer.calculate_expected_impact(prioritized)
-        
+
         # Create summary
         summary = SuggestionSummary.from_suggestions(prioritized)
-        
+
         # Build roadmap structure
         roadmap = {
             'projectName': project_name,
@@ -85,23 +85,23 @@ class RoadmapGenerator:
             'byEffort': self._group_by_effort(prioritized),
             'byImpact': self._group_by_impact(prioritized),
         }
-        
+
         # Save JSON roadmap
         json_path = output_dir / 'improvement-suggestions.json'
         self._save_json(roadmap, json_path)
-        
+
         # Generate Markdown roadmap
         md_path = output_dir / 'IMPROVEMENT_ROADMAP.md'
         self._generate_markdown(roadmap, md_path)
-        
+
         logger.info(f"Roadmap saved to {output_dir}")
-        
+
         return roadmap
-    
+
     def _suggestion_to_dict(self, suggestion: Suggestion) -> Dict:
         """Convert suggestion to dictionary."""
         return suggestion.to_dict()
-    
+
     def _group_by_category(self, suggestions: List[Suggestion]) -> Dict:
         """Group suggestions by category."""
         grouped = self.prioritizer.group_by_category(suggestions)
@@ -109,7 +109,7 @@ class RoadmapGenerator:
             category.value: [self._suggestion_to_dict(s) for s in slist]
             for category, slist in grouped.items()
         }
-    
+
     def _group_by_effort(self, suggestions: List[Suggestion]) -> Dict:
         """Group suggestions by effort."""
         grouped = self.prioritizer.group_by_effort(suggestions)
@@ -117,7 +117,7 @@ class RoadmapGenerator:
             effort.value: [self._suggestion_to_dict(s) for s in slist]
             for effort, slist in grouped.items()
         }
-    
+
     def _group_by_impact(self, suggestions: List[Suggestion]) -> Dict:
         """Group suggestions by impact."""
         grouped = self.prioritizer.group_by_impact(suggestions)
@@ -125,27 +125,27 @@ class RoadmapGenerator:
             impact.value: [self._suggestion_to_dict(s) for s in slist]
             for impact, slist in grouped.items()
         }
-    
+
     def _save_json(self, data: Dict, path: Path) -> None:
         """Save roadmap as JSON."""
         path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2, default=str)
         logger.info(f"Saved JSON roadmap to {path}")
-    
+
     def _generate_markdown(self, roadmap: Dict, path: Path) -> None:
         """Generate Markdown roadmap."""
         path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         with open(path, 'w', encoding='utf-8') as f:
             f.write(self._build_markdown(roadmap))
-        
+
         logger.info(f"Saved Markdown roadmap to {path}")
-    
+
     def _build_markdown(self, roadmap: Dict) -> str:
         """Build Markdown content for roadmap."""
         lines = []
-        
+
         # Header
         lines.append(f"# Improvement Roadmap: {roadmap['projectName']}")
         lines.append("")
@@ -153,7 +153,7 @@ class RoadmapGenerator:
         lines.append("")
         lines.append("---")
         lines.append("")
-        
+
         # Executive Summary
         lines.append("## Executive Summary")
         lines.append("")
@@ -162,7 +162,7 @@ class RoadmapGenerator:
         lines.append(f"- **Quick Wins:** {summary['quickWins']}")
         lines.append(f"- **High Priority:** {summary['highPriority']}")
         lines.append("")
-        
+
         effort = summary['estimatedEffort']
         lines.append("### Estimated Effort")
         lines.append(f"- **Total Hours:** {effort['total_hours']}")
@@ -172,7 +172,7 @@ class RoadmapGenerator:
         lines.append(f"- **Medium Effort:** {effort['medium_effort_count']} suggestions")
         lines.append(f"- **High Effort:** {effort['high_effort_count']} suggestions")
         lines.append("")
-        
+
         impact = summary['expectedImpact']
         lines.append("### Expected Impact")
         lines.append(f"- **High Impact:** {impact['high_impact_count']} suggestions")
@@ -181,11 +181,11 @@ class RoadmapGenerator:
         lines.append("")
         lines.append("---")
         lines.append("")
-        
+
         # Recommendations
         lines.append("## Recommendations")
         lines.append("")
-        
+
         # Immediate actions
         lines.append("### Immediate Actions (Quick Wins)")
         lines.append("")
@@ -203,7 +203,7 @@ class RoadmapGenerator:
         else:
             lines.append("No immediate quick wins identified.")
             lines.append("")
-        
+
         # Short-term actions
         lines.append("### Short-Term Actions (1-2 Weeks)")
         lines.append("")
@@ -220,7 +220,7 @@ class RoadmapGenerator:
         else:
             lines.append("No short-term actions identified.")
             lines.append("")
-        
+
         # Long-term actions
         lines.append("### Long-Term Actions (1+ Months)")
         lines.append("")
@@ -237,14 +237,14 @@ class RoadmapGenerator:
         else:
             lines.append("No long-term actions identified.")
             lines.append("")
-        
+
         lines.append("---")
         lines.append("")
-        
+
         # Detailed Suggestions
         lines.append("## Detailed Suggestions")
         lines.append("")
-        
+
         for i, suggestion in enumerate(roadmap['allSuggestions'], 1):
             lines.append(f"### {i}. {suggestion['title']}")
             lines.append("")
@@ -254,21 +254,21 @@ class RoadmapGenerator:
             lines.append(f"**Priority Score:** {suggestion['priority_score']:.1f}")
             lines.append(f"**Confidence:** {suggestion['confidence']:.2f}")
             lines.append("")
-            
+
             lines.append("#### Description")
             lines.append(suggestion['description'])
             lines.append("")
-            
+
             lines.append("#### Rationale")
             lines.append(suggestion['rationale'])
             lines.append("")
-            
+
             if suggestion.get('benefits'):
                 lines.append("#### Benefits")
                 for benefit in suggestion['benefits']:
                     lines.append(f"- {benefit}")
                 lines.append("")
-            
+
             if suggestion.get('implementation_steps'):
                 lines.append("#### Implementation Steps")
                 for step in suggestion['implementation_steps']:
@@ -276,38 +276,38 @@ class RoadmapGenerator:
                     if step.get('estimated_time'):
                         lines.append(f"   - Estimated time: {step['estimated_time']}")
                 lines.append("")
-            
+
             if suggestion.get('considerations'):
                 lines.append("#### Considerations")
                 for consideration in suggestion['considerations']:
                     lines.append(f"- {consideration}")
                 lines.append("")
-            
+
             if suggestion.get('risks'):
                 lines.append("#### Risks")
                 for risk in suggestion['risks']:
                     lines.append(f"- {risk}")
                 lines.append("")
-            
+
             if suggestion.get('related_files'):
                 lines.append("#### Related Files")
                 for file_path in suggestion['related_files']:
                     lines.append(f"- `{file_path}`")
                 lines.append("")
-            
+
             if suggestion.get('related_findings'):
                 lines.append("#### Related Findings")
                 for finding_id in suggestion['related_findings']:
                     lines.append(f"- `{finding_id}`")
                 lines.append("")
-            
+
             lines.append("---")
             lines.append("")
-        
+
         # Appendix: By Category
         lines.append("## Appendix: Suggestions by Category")
         lines.append("")
-        
+
         for category, suggestions in roadmap['byCategory'].items():
             lines.append(f"### {category.replace('_', ' ').title()}")
             lines.append(f"**Count:** {len(suggestions)}")
@@ -316,7 +316,7 @@ class RoadmapGenerator:
                 lines.append(f"- [{suggestion['id']}] {suggestion['title']} "
                            f"(Priority: {suggestion['priority_score']:.1f})")
             lines.append("")
-        
+
         return '\n'.join(lines)
 
 

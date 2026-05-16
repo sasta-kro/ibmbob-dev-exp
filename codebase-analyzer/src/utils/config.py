@@ -11,27 +11,27 @@ from loguru import logger
 
 class Config:
     """Application configuration manager."""
-    
+
     def __init__(self, config_path: Optional[Path] = None):
         """
         Initialize configuration.
-        
+
         Args:
             config_path: Path to config.yaml file. If None, uses default location.
         """
         # Load environment variables
         load_dotenv()
-        
+
         # Determine config file path
         if config_path is None:
             # Default to config/config.yaml relative to project root
             project_root = Path(__file__).parent.parent.parent
             config_path = project_root / "config" / "config.yaml"
-        
+
         self.config_path = config_path
         self._config: Dict[str, Any] = {}
         self._load_config()
-    
+
     def _load_config(self) -> None:
         """Load configuration from YAML file."""
         try:
@@ -45,7 +45,7 @@ class Config:
         except Exception as e:
             logger.error(f"Error loading config: {e}. Using defaults.")
             self._config = self._get_default_config()
-    
+
     def _get_default_config(self) -> Dict[str, Any]:
         """Get default configuration."""
         return {
@@ -72,47 +72,47 @@ class Config:
                 'enable_animations': True
             }
         }
-    
+
     def get(self, key: str, default: Any = None) -> Any:
         """
         Get configuration value by dot-notation key.
-        
+
         Args:
             key: Configuration key (e.g., 'app.name' or 'analysis.max_workers')
             default: Default value if key not found
-            
+
         Returns:
             Configuration value or default
         """
         keys = key.split('.')
         value = self._config
-        
+
         for k in keys:
             if isinstance(value, dict) and k in value:
                 value = value[k]
             else:
                 return default
-        
+
         return value
-    
+
     def set(self, key: str, value: Any) -> None:
         """
         Set configuration value by dot-notation key.
-        
+
         Args:
             key: Configuration key (e.g., 'app.name')
             value: Value to set
         """
         keys = key.split('.')
         config = self._config
-        
+
         for k in keys[:-1]:
             if k not in config:
                 config[k] = {}
             config = config[k]
-        
+
         config[keys[-1]] = value
-    
+
     def save(self) -> None:
         """Save current configuration to file."""
         try:
@@ -122,100 +122,100 @@ class Config:
             logger.info(f"Configuration saved to {self.config_path}")
         except Exception as e:
             logger.error(f"Error saving config: {e}")
-    
+
     # Convenience properties for common settings
-    
+
     @property
     def app_name(self) -> str:
         """Get application name."""
         return self.get('app.name', 'Codebase Analyzer')
-    
+
     @property
     def app_version(self) -> str:
         """Get application version."""
         return self.get('app.version', '1.0.0')
-    
+
     @property
     def log_level(self) -> str:
         """Get log level."""
         return os.getenv('LOG_LEVEL', self.get('app.log_level', 'INFO'))
-    
+
     @property
     def max_file_size_mb(self) -> int:
         """Get maximum file size in MB."""
         return self.get('analysis.max_file_size_mb', 10)
-    
+
     @property
     def max_workers(self) -> int:
         """Get maximum number of worker threads."""
         return self.get('analysis.max_workers', 4)
-    
+
     @property
     def enable_ai_analysis(self) -> bool:
         """Check if AI analysis is enabled."""
         return os.getenv('ENABLE_AI_ANALYSIS', str(self.get('analysis.enable_ai_analysis', True))).lower() == 'true'
-    
+
     @property
     def ignore_patterns(self) -> List[str]:
         """Get ignore patterns."""
         return self.get('ignore_patterns', [])
-    
+
     @property
     def cache_enabled(self) -> bool:
         """Check if caching is enabled."""
         return os.getenv('CACHE_ENABLED', str(self.get('cache.enabled', True))).lower() == 'true'
-    
+
     @property
     def cache_ttl_hours(self) -> int:
         """Get cache TTL in hours."""
         return int(os.getenv('CACHE_TTL_HOURS', self.get('cache.ttl_hours', 24)))
-    
+
     @property
     def cache_db_path(self) -> Path:
         """Get cache database path."""
         project_root = Path(__file__).parent.parent.parent
         return project_root / self.get('cache.database_path', '.cache/analyzer.db')
-    
+
     @property
     def watson_api_key(self) -> Optional[str]:
         """Get IBM Watson API key."""
         return os.getenv('WATSON_API_KEY')
-    
+
     @property
     def watson_url(self) -> str:
         """Get IBM Watson URL."""
         return os.getenv('WATSON_URL', 'https://us-south.ml.cloud.ibm.com')
-    
+
     @property
     def watson_project_id(self) -> Optional[str]:
         """Get IBM Watson project ID."""
         return os.getenv('WATSON_PROJECT_ID')
-    
+
     @property
     def watson_model_id(self) -> str:
         """Get IBM Watson model ID."""
-        return os.getenv('WATSON_MODEL_ID', 'ibm/granite-13b-chat-v2')
-    
+        return os.getenv('WATSON_MODEL_ID', 'openai/gpt-oss-120b')
+
     @property
     def watson_max_tokens(self) -> int:
         """Get Watson max tokens."""
         return int(os.getenv('WATSON_MAX_TOKENS', 2048))
-    
+
     @property
     def watson_temperature(self) -> float:
         """Get Watson temperature."""
         return float(os.getenv('WATSON_TEMPERATURE', 0.7))
-    
+
     @property
     def window_width(self) -> int:
         """Get UI window width."""
         return int(os.getenv('WINDOW_WIDTH', self.get('ui.window_width', 1400)))
-    
+
     @property
     def window_height(self) -> int:
         """Get UI window height."""
         return int(os.getenv('WINDOW_HEIGHT', self.get('ui.window_height', 900)))
-    
+
     @property
     def theme(self) -> str:
         """Get UI theme."""
@@ -229,7 +229,7 @@ _config: Optional[Config] = None
 def get_config() -> Config:
     """
     Get global configuration instance.
-    
+
     Returns:
         Config instance
     """

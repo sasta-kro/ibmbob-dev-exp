@@ -11,14 +11,14 @@ from ..theme import AppTheme
 
 class SettingsPage(ft.Container):
     """Settings page component"""
-    
+
     def __init__(
         self,
         on_save: Optional[Callable] = None
     ):
         """
         Initialize settings page
-        
+
         Args:
             on_save: Callback when settings are saved
         """
@@ -30,13 +30,13 @@ class SettingsPage(ft.Container):
             "generate_suggestions": True,
             "theme": "light"
         }
-        
+
         super().__init__(
             content=self._build_content(),
             padding=AppTheme.SPACING_LARGE,
             expand=True
         )
-    
+
     def _build_content(self) -> ft.Column:
         """Build settings page content"""
         # Header
@@ -46,7 +46,7 @@ class SettingsPage(ft.Container):
             weight=ft.FontWeight.BOLD,
             color=AppTheme.TEXT_PRIMARY
         )
-        
+
         # Analysis settings section
         analysis_section = ft.Card(
             content=ft.Container(
@@ -108,7 +108,7 @@ class SettingsPage(ft.Container):
             ),
             elevation=2
         )
-        
+
         # Appearance settings section
         appearance_section = ft.Card(
             content=ft.Container(
@@ -138,7 +138,7 @@ class SettingsPage(ft.Container):
             ),
             elevation=2
         )
-        
+
         # About section
         about_section = ft.Card(
             content=ft.Container(
@@ -175,9 +175,9 @@ class SettingsPage(ft.Container):
             ),
             elevation=2
         )
-        
+
         # Save button
-        save_button = ft.ElevatedButton(
+        save_button = ft.Button(
             content=ft.Row(
                 controls=[
                     ft.Icon(ft.Icons.SAVE),
@@ -197,7 +197,7 @@ class SettingsPage(ft.Container):
                 color=AppTheme.TEXT_ON_PRIMARY
             )
         )
-        
+
         return ft.Column(
             controls=[
                 header,
@@ -214,16 +214,16 @@ class SettingsPage(ft.Container):
             scroll=ft.ScrollMode.AUTO,
             expand=True
         )
-    
+
     def _update_setting(self, key: str, value):
         """Update a setting value"""
         self.settings[key] = value
-    
+
     def _save_settings(self, e):
         """Save settings"""
         if self.on_save:
             self.on_save(self.settings)
-    
+
     def load_settings(self, settings: dict):
         """Load settings from config"""
         self.settings.update(settings)

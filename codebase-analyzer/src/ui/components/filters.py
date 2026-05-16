@@ -4,14 +4,14 @@ Filter Components
 Reusable filter panel components for filtering data.
 """
 
-from typing import List, Optional, Callable, Dict, Any
+from typing import List, Optional, Callable, Dict
 import flet as ft
 from ..theme import AppTheme
 
 
 class FilterPanel(ft.Container):
     """Reusable filter panel component"""
-    
+
     def __init__(
         self,
         filters: Dict[str, List[str]],
@@ -21,7 +21,7 @@ class FilterPanel(ft.Container):
     ):
         """
         Initialize filter panel
-        
+
         Args:
             filters: Dictionary of filter name to list of options
             on_filter_change: Callback when filters change
@@ -34,7 +34,7 @@ class FilterPanel(ft.Container):
         self.on_search = on_search
         self.selected_filters: Dict[str, List[str]] = {k: [] for k in filters.keys()}
         self.search_query = ""
-        
+
         super().__init__(
             content=self._build_content(),
             bgcolor=AppTheme.BG_CARD,
@@ -42,11 +42,11 @@ class FilterPanel(ft.Container):
             border_radius=AppTheme.RADIUS_MEDIUM,
             padding=16
         )
-    
+
     def _build_content(self) -> ft.Column:
         """Build filter panel content"""
         controls = []
-        
+
         # Search box
         if self.search_enabled:
             search_box = ft.TextField(
@@ -58,13 +58,13 @@ class FilterPanel(ft.Container):
             )
             controls.append(search_box)
             controls.append(ft.Container(height=16))
-        
+
         # Filter sections
         for filter_name, options in self.filter_options.items():
             filter_section = self._build_filter_section(filter_name, options)
             controls.append(filter_section)
             controls.append(ft.Container(height=12))
-        
+
         # Clear filters button
         clear_button = ft.TextButton(
             "Clear All Filters",
@@ -72,7 +72,7 @@ class FilterPanel(ft.Container):
             on_click=self._clear_filters
         )
         controls.append(clear_button)
-        
+
         # Active filter chips
         if any(self.selected_filters.values()):
             controls.append(ft.Container(height=8))
@@ -80,13 +80,13 @@ class FilterPanel(ft.Container):
             controls.append(ft.Container(height=8))
             controls.append(ft.Text("Active Filters:", size=12, weight=ft.FontWeight.BOLD))
             controls.append(self._build_active_chips())
-        
+
         return ft.Column(
             controls=controls,
             spacing=0,
             scroll=ft.ScrollMode.AUTO
         )
-    
+
     def _build_filter_section(self, name: str, options: List[str]) -> ft.Column:
         """Build a filter section"""
         # Section title
@@ -96,7 +96,7 @@ class FilterPanel(ft.Container):
             weight=ft.FontWeight.BOLD,
             color=AppTheme.TEXT_PRIMARY
         )
-        
+
         # Checkboxes for options
         checkboxes = []
         for option in options:
@@ -106,12 +106,12 @@ class FilterPanel(ft.Container):
                 on_change=lambda e, n=name, o=option: self._on_checkbox_change(n, o, e.control.value)
             )
             checkboxes.append(checkbox)
-        
+
         return ft.Column(
             controls=[title] + checkboxes,
             spacing=4
         )
-    
+
     def _build_active_chips(self) -> ft.Row:
         """Build active filter chips"""
         chips = []
@@ -139,13 +139,13 @@ class FilterPanel(ft.Container):
                     padding=ft.Padding(left=8, right=8, top=4, bottom=4)
                 )
                 chips.append(chip)
-        
+
         return ft.Row(
             controls=chips,
             spacing=8,
             wrap=True
         )
-    
+
     def _on_checkbox_change(self, filter_name: str, option: str, checked: bool):
         """Handle checkbox change"""
         if checked:
@@ -154,33 +154,33 @@ class FilterPanel(ft.Container):
         else:
             if option in self.selected_filters[filter_name]:
                 self.selected_filters[filter_name].remove(option)
-        
+
         self._notify_change()
-    
+
     def _on_search_change(self, e):
         """Handle search query change"""
         self.search_query = e.control.value
         if self.on_search:
             self.on_search(self.search_query)
-    
+
     def _remove_filter(self, filter_name: str, value: str):
         """Remove a specific filter"""
         if value in self.selected_filters[filter_name]:
             self.selected_filters[filter_name].remove(value)
         self._notify_change()
-    
+
     def _clear_filters(self, e):
         """Clear all filters"""
         self.selected_filters = {k: [] for k in self.filter_options.keys()}
         self.search_query = ""
         self._notify_change()
-    
+
     def _notify_change(self):
         """Notify parent of filter changes"""
         self.content = self._build_content()
         self.update()
         self.on_filter_change(self.selected_filters)
-    
+
     def get_active_filters(self) -> Dict[str, List[str]]:
         """Get currently active filters"""
         return {k: v for k, v in self.selected_filters.items() if v}
@@ -188,7 +188,7 @@ class FilterPanel(ft.Container):
 
 class SortControl(ft.Container):
     """Sort control component"""
-    
+
     def __init__(
         self,
         options: List[str],
@@ -197,7 +197,7 @@ class SortControl(ft.Container):
     ):
         """
         Initialize sort control
-        
+
         Args:
             options: List of sort options
             on_sort_change: Callback when sort changes (option, ascending)
@@ -207,11 +207,11 @@ class SortControl(ft.Container):
         self.on_sort_change = on_sort_change
         self.current_option = default_option or options[0]
         self.ascending = True
-        
+
         super().__init__(
             content=self._build_content()
         )
-    
+
     def _build_content(self) -> ft.Row:
         """Build sort control content"""
         dropdown = ft.Dropdown(
@@ -221,13 +221,13 @@ class SortControl(ft.Container):
             dense=True,
             width=200
         )
-        
+
         direction_button = ft.IconButton(
             icon=ft.Icons.ARROW_UPWARD if self.ascending else ft.Icons.ARROW_DOWNWARD,
             tooltip="Sort Direction",
             on_click=self._toggle_direction
         )
-        
+
         return ft.Row(
             controls=[
                 ft.Text("Sort by:", size=14, color=AppTheme.TEXT_SECONDARY),
@@ -237,12 +237,12 @@ class SortControl(ft.Container):
             spacing=8,
             alignment=ft.MainAxisAlignment.END
         )
-    
+
     def _on_option_change(self, e):
         """Handle sort option change"""
         self.current_option = e.control.value
         self.on_sort_change(self.current_option, self.ascending)
-    
+
     def _toggle_direction(self, e):
         """Toggle sort direction"""
         self.ascending = not self.ascending
@@ -253,7 +253,7 @@ class SortControl(ft.Container):
 
 class SearchBar(ft.Container):
     """Search bar component"""
-    
+
     def __init__(
         self,
         on_search: Callable[[str], None],
@@ -262,7 +262,7 @@ class SearchBar(ft.Container):
     ):
         """
         Initialize search bar
-        
+
         Args:
             on_search: Callback when search query changes
             placeholder: Placeholder text
@@ -271,11 +271,11 @@ class SearchBar(ft.Container):
         self.on_search = on_search
         self.placeholder = placeholder
         self.search_width = width
-        
+
         super().__init__(
             content=self._build_content()
         )
-    
+
     def _build_content(self) -> ft.TextField:
         """Build search bar content"""
         return ft.TextField(
@@ -287,4 +287,66 @@ class SearchBar(ft.Container):
             width=self.search_width
         )
 
-# Made with Bob
+class ChipFilterRow(ft.Container):
+    """Horizontal row of toggleable filter chips."""
+
+    def __init__(
+        self,
+        label: str,
+        options: List[str],
+        color_map: Optional[Dict[str, str]] = None,
+        on_change: Optional[Callable[[List[str]], None]] = None,
+    ):
+        self.label = label
+        self.options = options
+        self.color_map = color_map or {}
+        self.on_change_cb = on_change
+        self.selected: List[str] = []
+
+        super().__init__(content=self._build())
+
+    def _build(self) -> ft.Row:
+        chips = []
+        for opt in self.options:
+            active = opt in self.selected
+            color = self.color_map.get(opt, AppTheme.PRIMARY)
+
+            chip = ft.Container(
+                content=ft.Text(
+                    opt.capitalize(),
+                    size=12,
+                    weight=ft.FontWeight.BOLD if active else ft.FontWeight.NORMAL,
+                    color="white" if active else color,
+                ),
+                bgcolor=color if active else None,
+                border=ft.Border.all(1.5, color),
+                border_radius=16,
+                padding=ft.Padding(left=12, right=12, top=6, bottom=6),
+                on_click=lambda _, o=opt: self._toggle(o),
+                animate=ft.Animation(200, ft.AnimationCurve.EASE_OUT),
+            )
+            chips.append(chip)
+
+        return ft.Row(
+            controls=[
+                ft.Text(self.label, size=12, color=AppTheme.TEXT_SECONDARY,
+                        weight=ft.FontWeight.BOLD),
+            ] + chips,
+            spacing=8,
+            wrap=True,
+        )
+
+    def _toggle(self, option: str):
+        if option in self.selected:
+            self.selected.remove(option)
+        else:
+            self.selected.append(option)
+        self.content = self._build()
+        self.update()
+        if self.on_change_cb:
+            self.on_change_cb(list(self.selected))
+
+    def clear(self):
+        self.selected = []
+        self.content = self._build()
+        self.update()

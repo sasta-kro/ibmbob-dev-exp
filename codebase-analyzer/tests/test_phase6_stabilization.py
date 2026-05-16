@@ -19,13 +19,15 @@ class FakePage:
         self.overlay = []
         self.controls = []
         self.update_count = 0
-        self.snack_bar = None
-    
+
     def add(self, control):
         self.controls.append(control)
-    
+
     def update(self):
         self.update_count += 1
+
+    def show_dialog(self, dialog):
+        pass
 
 
 def make_finding() -> Finding:

@@ -34,56 +34,47 @@ class StaticAnalysisResult:
 class StaticAnalyzer:
     """
     Static code analyzer that integrates multiple analysis tools.
-    
+
     Supports:
     - Pylint for Python code quality
     - Bandit for security issues
     - Radon for complexity metrics
     - Custom pattern-based detection
     """
-    
+
     def __init__(self, config: Any):
         """
         Initialize static analyzer.
-        
+
         Args:
             config: Configuration object
         """
         self.config = config
         self.logger = logger
-        
+
         # Pattern-based detections
         self.security_patterns = self._init_security_patterns()
         self.bug_patterns = self._init_bug_patterns()
         self.performance_patterns = self._init_performance_patterns()
-    
-    def analyze_files(self, files: List[FileInfo]) -> List[Finding]:
-        """
-        Analyze files using all available static analysis tools.
-        
-        Args:
-            files: List of FileInfo objects to analyze
-            
-        Returns:
-            List of Finding objects
-        """
+
+    def analyze_files(self, files: List[FileInfo], progress_callback=None) -> List[Finding]:
         self.logger.info(f"Starting static analysis on {len(files)} files")
-        
+
         all_findings = []
-        
+
         # Run different analysis methods
         all_findings.extend(self._run_pattern_analysis(files))
         all_findings.extend(self._run_pylint_analysis(files))
         all_findings.extend(self._run_bandit_analysis(files))
         all_findings.extend(self._run_complexity_analysis(files))
         all_findings.extend(self._run_ast_analysis(files))
-        
+
         # Deduplicate findings
         unique_findings = self._deduplicate_findings(all_findings)
-        
+
         self.logger.info(f"Static analysis complete: {len(unique_findings)} findings")
         return unique_findings
-    
+
     def _read_file_content(self, file_path: Path) -> Optional[str]:
         """Read file content safely"""
         try:
@@ -92,45 +83,45 @@ class StaticAnalyzer:
         except Exception as e:
             self.logger.warning(f"Could not read {file_path}: {e}")
             return None
-    
+
     def _run_pattern_analysis(self, files: List[FileInfo]) -> List[Finding]:
         """Run regex pattern-based analysis"""
         findings = []
-        
+
         for file_info in files:
             content = self._read_file_content(file_info.path)
             if not content:
                 continue
-            
+
             # Security patterns
             findings.extend(self._check_security_patterns(file_info, content))
-            
+
             # Bug patterns
             findings.extend(self._check_bug_patterns(file_info, content))
-            
+
             # Performance patterns
             findings.extend(self._check_performance_patterns(file_info, content))
-        
+
         return findings
-    
+
     def _check_security_patterns(self, file_info: FileInfo, content: str) -> List[Finding]:
         """Check for security issues using patterns"""
         findings = []
-        
+
         for pattern_name, pattern_data in self.security_patterns.items():
             matches = re.finditer(pattern_data['pattern'], content, re.MULTILINE)
-            
+
             for match in matches:
                 line_num = content[:match.start()].count('\n') + 1
                 code_snippet = self._extract_code_snippet(content, line_num)
-                
+
                 location = CodeLocation(
                     file_path=file_info.path,
                     line_start=line_num,
                     line_end=line_num,
                     code_snippet=code_snippet
                 )
-                
+
                 finding = Finding(
                     id=f"SEC-{pattern_name}-{file_info.relative_path}-{line_num}",
                     title=pattern_data['title'],
@@ -149,27 +140,27 @@ class StaticAnalyzer:
                     tags=['security', 'pattern-based']
                 )
                 findings.append(finding)
-        
+
         return findings
-    
+
     def _check_bug_patterns(self, file_info: FileInfo, content: str) -> List[Finding]:
         """Check for common bug patterns"""
         findings = []
-        
+
         for pattern_name, pattern_data in self.bug_patterns.items():
             matches = re.finditer(pattern_data['pattern'], content, re.MULTILINE)
-            
+
             for match in matches:
                 line_num = content[:match.start()].count('\n') + 1
                 code_snippet = self._extract_code_snippet(content, line_num)
-                
+
                 location = CodeLocation(
                     file_path=file_info.path,
                     line_start=line_num,
                     line_end=line_num,
                     code_snippet=code_snippet
                 )
-                
+
                 finding = Finding(
                     id=f"BUG-{pattern_name}-{file_info.relative_path}-{line_num}",
                     title=pattern_data['title'],
@@ -188,27 +179,27 @@ class StaticAnalyzer:
                     tags=['bug', 'pattern-based']
                 )
                 findings.append(finding)
-        
+
         return findings
-    
+
     def _check_performance_patterns(self, file_info: FileInfo, content: str) -> List[Finding]:
         """Check for performance issues using patterns"""
         findings = []
-        
+
         for pattern_name, pattern_data in self.performance_patterns.items():
             matches = re.finditer(pattern_data['pattern'], content, re.MULTILINE)
-            
+
             for match in matches:
                 line_num = content[:match.start()].count('\n') + 1
                 code_snippet = self._extract_code_snippet(content, line_num)
-                
+
                 location = CodeLocation(
                     file_path=file_info.path,
                     line_start=line_num,
                     line_end=line_num,
                     code_snippet=code_snippet
                 )
-                
+
                 finding = Finding(
                     id=f"PERF-{pattern_name}-{file_info.relative_path}-{line_num}",
                     title=pattern_data['title'],
@@ -227,26 +218,26 @@ class StaticAnalyzer:
                     tags=['performance', 'pattern-based']
                 )
                 findings.append(finding)
-        
+
         return findings
-    
+
     def _extract_code_snippet(self, content: str, line_num: int, context_lines: int = 2) -> str:
         """Extract code snippet with context"""
         lines = content.split('\n')
         start = max(0, line_num - context_lines - 1)
         end = min(len(lines), line_num + context_lines)
         return '\n'.join(lines[start:end])
-    
+
     def _run_pylint_analysis(self, files: List[FileInfo]) -> List[Finding]:
         """Run pylint analysis on Python files"""
         findings = []
         python_files = [f for f in files if f.file_type == FileType.PYTHON]
-        
+
         if not python_files:
             return findings
-        
+
         self.logger.info(f"Running pylint on {len(python_files)} Python files")
-        
+
         for file_info in python_files:
             try:
                 result = subprocess.run(
@@ -255,11 +246,11 @@ class StaticAnalyzer:
                     text=True,
                     timeout=30
                 )
-                
+
                 if result.stdout:
                     pylint_results = json.loads(result.stdout)
                     findings.extend(self._parse_pylint_results(pylint_results, file_info))
-                    
+
             except subprocess.TimeoutExpired:
                 self.logger.warning(f"Pylint timeout on {file_info.path}")
             except FileNotFoundError:
@@ -267,13 +258,13 @@ class StaticAnalyzer:
                 break
             except Exception as e:
                 self.logger.warning(f"Pylint error on {file_info.path}: {e}")
-        
+
         return findings
-    
+
     def _parse_pylint_results(self, results: List[Dict], file_info: FileInfo) -> List[Finding]:
         """Parse pylint JSON output into Finding objects"""
         findings = []
-        
+
         severity_map = {
             'error': Severity.HIGH,
             'warning': Severity.MEDIUM,
@@ -281,21 +272,21 @@ class StaticAnalyzer:
             'convention': Severity.INFO,
             'info': Severity.INFO
         }
-        
+
         for item in results:
             severity = severity_map.get(item.get('type', 'info'), Severity.INFO)
             line_num = item.get('line', 0)
-            
+
             content = self._read_file_content(file_info.path)
             code_snippet = self._extract_code_snippet(content, line_num) if content else ""
-            
+
             location = CodeLocation(
                 file_path=file_info.path,
                 line_start=line_num,
                 line_end=item.get('endLine', line_num),
                 code_snippet=code_snippet
             )
-            
+
             finding = Finding(
                 id=f"PYLINT-{item.get('message-id', 'UNKNOWN')}-{file_info.relative_path}-{line_num}",
                 title=item.get('message', 'Pylint issue'),
@@ -313,19 +304,19 @@ class StaticAnalyzer:
                 tags=['pylint', 'code-quality']
             )
             findings.append(finding)
-        
+
         return findings
-    
+
     def _run_bandit_analysis(self, files: List[FileInfo]) -> List[Finding]:
         """Run bandit security analysis on Python files"""
         findings = []
         python_files = [f for f in files if f.file_type == FileType.PYTHON]
-        
+
         if not python_files:
             return findings
-        
+
         self.logger.info(f"Running bandit on {len(python_files)} Python files")
-        
+
         for file_info in python_files:
             try:
                 result = subprocess.run(
@@ -334,11 +325,11 @@ class StaticAnalyzer:
                     text=True,
                     timeout=30
                 )
-                
+
                 if result.stdout:
                     bandit_results = json.loads(result.stdout)
                     findings.extend(self._parse_bandit_results(bandit_results, file_info))
-                    
+
             except subprocess.TimeoutExpired:
                 self.logger.warning(f"Bandit timeout on {file_info.path}")
             except FileNotFoundError:
@@ -346,37 +337,37 @@ class StaticAnalyzer:
                 break
             except Exception as e:
                 self.logger.warning(f"Bandit error on {file_info.path}: {e}")
-        
+
         return findings
-    
+
     def _parse_bandit_results(self, results: Dict, file_info: FileInfo) -> List[Finding]:
         """Parse bandit JSON output into Finding objects"""
         findings = []
-        
+
         severity_map = {
             'HIGH': Severity.HIGH,
             'MEDIUM': Severity.MEDIUM,
             'LOW': Severity.LOW
         }
-        
+
         confidence_map = {
             'HIGH': 0.9,
             'MEDIUM': 0.7,
             'LOW': 0.5
         }
-        
+
         for item in results.get('results', []):
             severity = severity_map.get(item.get('issue_severity', 'LOW'), Severity.LOW)
             confidence = confidence_map.get(item.get('issue_confidence', 'MEDIUM'), 0.7)
             line_num = item.get('line_number', 0)
-            
+
             location = CodeLocation(
                 file_path=file_info.path,
                 line_start=line_num,
                 line_end=line_num,
                 code_snippet=item.get('code', '').strip()
             )
-            
+
             finding = Finding(
                 id=f"BANDIT-{item.get('test_id', 'UNKNOWN')}-{file_info.relative_path}-{line_num}",
                 title=item.get('issue_text', 'Security issue'),
@@ -394,17 +385,17 @@ class StaticAnalyzer:
                 tags=['bandit', 'security']
             )
             findings.append(finding)
-        
+
         return findings
-    
+
     def _run_complexity_analysis(self, files: List[FileInfo]) -> List[Finding]:
         """Analyze code complexity and flag high complexity"""
         findings = []
-        
+
         for file_info in files:
             if file_info.file_type != FileType.PYTHON:
                 continue
-            
+
             # Check cyclomatic complexity
             complexity = file_info.metrics.complexity
             if complexity > 10:
@@ -414,7 +405,7 @@ class StaticAnalyzer:
                     line_end=file_info.metrics.lines_of_code,
                     code_snippet=f"Total complexity: {complexity}"
                 )
-                
+
                 finding = Finding(
                     id=f"COMPLEXITY-{file_info.relative_path}",
                     title="High cyclomatic complexity",
@@ -432,21 +423,21 @@ class StaticAnalyzer:
                     tags=['complexity', 'maintainability']
                 )
                 findings.append(finding)
-        
+
         return findings
-    
+
     def _run_ast_analysis(self, files: List[FileInfo]) -> List[Finding]:
         """Run AST-based analysis for Python files"""
         findings = []
-        
+
         for file_info in files:
             if file_info.file_type != FileType.PYTHON:
                 continue
-            
+
             content = self._read_file_content(file_info.path)
             if not content:
                 continue
-            
+
             try:
                 tree = ast.parse(content)
                 findings.extend(self._analyze_ast(tree, file_info, content))
@@ -454,13 +445,13 @@ class StaticAnalyzer:
                 pass
             except Exception as e:
                 self.logger.warning(f"AST analysis error on {file_info.path}: {e}")
-        
+
         return findings
-    
+
     def _analyze_ast(self, tree: ast.AST, file_info: FileInfo, content: str) -> List[Finding]:
         """Analyze AST for common issues"""
         findings = []
-        
+
         for node in ast.walk(tree):
             # Check for bare except clauses
             if isinstance(node, ast.ExceptHandler) and node.type is None:
@@ -471,7 +462,7 @@ class StaticAnalyzer:
                     line_end=node.lineno,
                     code_snippet=code_snippet
                 )
-                
+
                 finding = Finding(
                     id=f"AST-BARE-EXCEPT-{file_info.relative_path}-{node.lineno}",
                     title="Bare except clause",
@@ -489,7 +480,7 @@ class StaticAnalyzer:
                     tags=['ast', 'error-handling']
                 )
                 findings.append(finding)
-            
+
             # Check for mutable default arguments
             if isinstance(node, ast.FunctionDef):
                 for default in node.args.defaults:
@@ -501,7 +492,7 @@ class StaticAnalyzer:
                             line_end=node.lineno,
                             code_snippet=code_snippet
                         )
-                        
+
                         finding = Finding(
                             id=f"AST-MUTABLE-DEFAULT-{file_info.relative_path}-{node.lineno}",
                             title="Mutable default argument",
@@ -519,14 +510,14 @@ class StaticAnalyzer:
                             tags=['ast', 'bug']
                         )
                         findings.append(finding)
-        
+
         return findings
-    
+
     def _deduplicate_findings(self, findings: List[Finding]) -> List[Finding]:
         """Remove duplicate findings based on file, line, and type"""
         seen = set()
         unique = []
-        
+
         for finding in findings:
             key = (
                 str(finding.location.file_path),
@@ -537,9 +528,9 @@ class StaticAnalyzer:
             if key not in seen:
                 seen.add(key)
                 unique.append(finding)
-        
+
         return unique
-    
+
     def _init_security_patterns(self) -> Dict[str, Dict[str, Any]]:
         """Initialize security detection patterns"""
         return {
@@ -584,7 +575,7 @@ class StaticAnalyzer:
                 'fix': 'Avoid exec() or carefully validate input'
             }
         }
-    
+
     def _init_bug_patterns(self) -> Dict[str, Dict[str, Any]]:
         """Initialize bug detection patterns"""
         return {
@@ -613,7 +604,7 @@ class StaticAnalyzer:
                 'fix': 'Log the exception or handle it appropriately'
             }
         }
-    
+
     def _init_performance_patterns(self) -> Dict[str, Dict[str, Any]]:
         """Initialize performance issue patterns"""
         return {
