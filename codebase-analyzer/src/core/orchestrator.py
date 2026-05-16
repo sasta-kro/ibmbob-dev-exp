@@ -16,6 +16,7 @@ from ..services.watson_service import WatsonService
 from ..services.cache_service import CacheService
 from ..generators.markdown_generator import MarkdownGenerator
 from ..generators.index_generator import IndexGenerator
+from ..review.review_engine import ReviewEngine
 from ..models.project import Project
 from ..models.file_info import FileInfo
 from ..models.functionality import FunctionalityGroup, FunctionalityMap
@@ -59,6 +60,9 @@ class AnalysisOrchestrator:
         # Initialize generators
         self.markdown_generator = MarkdownGenerator(config)
         self.index_generator = IndexGenerator()
+        
+        # Initialize review engine
+        self.review_engine = ReviewEngine(config)
         
         # Progress tracking
         self.progress_callback: Optional[Callable[[str, int, int], None]] = None
@@ -192,6 +196,41 @@ class AnalysisOrchestrator:
         
         # Generate index file
         index_path = output_path / 'INDEX.md'
+    def review_project(
+        self,
+        project: Project,
+        output_dir: Optional[str] = None,
+        enable_ai: bool = True
+    ) -> Dict[str, Any]:
+        """
+        Perform code review on the analyzed project.
+        
+        Args:
+            project: Analyzed project object
+            output_dir: Optional output directory for review reports
+            enable_ai: Whether to use AI-powered review
+            
+        Returns:
+            Dictionary with review results and statistics
+        """
+        logger.info("Starting code review")
+        
+        # Use default output directory if not specified
+        if output_dir is None:
+            output_dir = './review'
+        
+        output_path = Path(output_dir)
+        
+        # Perform review
+        review_result = self.review_engine.review_project(
+            project,
+            output_dir=output_path,
+            enable_ai=enable_ai
+        )
+        
+        logger.info(f"Code review complete: {review_result['total_findings']} findings")
+        return review_result
+    
         self.index_generator.generate_index(project, doc_files, index_path)
         
         logger.info(f"Documentation generated at: {output_path}")

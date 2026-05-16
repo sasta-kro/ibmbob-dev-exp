@@ -5,6 +5,7 @@
 **Project Name:** Codebase Analyzer  
 **Type:** Python Desktop Application (Flet-based)  
 **Purpose:** AI-powered codebase analysis, documentation generation, code review, and improvement suggestions  
+**Current Phase:** Phase 4 Complete (Code Review Engine) - Ready for Phase 5
 **Current Phase:** Phase 3 Stabilization Fix Applied (Documentation Generator) - Runtime smoke verification pending dependency install
 **Last Updated:** 2026-05-16
 
@@ -363,5 +364,55 @@ Comprehensive default ignore list including:
 **Jinja2 Templates (`src/templates/`):**
 - `project_overview.md.j2` (152 lines) - Project summary, metrics, groups
 - `functionality_group.md.j2` (197 lines) - Group details, files, components
+
+### 6. Code Review Components (`src/review/`)
+
+**Static Analyzer (`static_analyzer.py` - 697 lines):**
+- Pattern-based detection (security, bugs, performance)
+- Pylint integration for code quality
+- Bandit integration for security scanning
+- Complexity analysis
+- AST-based analysis (bare except, mutable defaults)
+- Finding deduplication
+- Code snippet extraction with context
+- 10 predefined detection patterns
+
+**AI Reviewer (`ai_reviewer.py` - 524 lines):**
+- IBM Watson AI integration for deep analysis
+- Smart file selection (top 50 important files)
+- Bug detection (logic errors, type mismatches, race conditions)
+- Security vulnerability detection (SQL injection, XSS, auth issues)
+- Performance issue detection (N+1 queries, inefficient algorithms)
+- Design issue detection (SOLID violations, code duplication)
+- AI response parsing into Finding objects
+- Confidence scoring and code snippet extraction
+
+**Finding Classifier (`finding_classifier.py` - 365 lines):**
+- Multi-dimensional classification (severity, type, file, source)
+- Priority scoring algorithm (severity + confidence + type + actionability)
+- Finding deduplication with confidence-based selection
+- Statistical analysis and metrics calculation
+- Filtering by severity, type, confidence
+- Quick wins identification (low effort, high impact)
+- High priority finding detection
+- Grouping and aggregation
+
+**Review Engine (`review_engine.py` - 378 lines):**
+- Main coordinator for all review activities
+- Static analysis orchestration
+- AI review orchestration (optional)
+- Finding classification and prioritization
+- JSON report generation (review-findings.json)
+- Markdown report generation (REVIEW_REPORT.md)
+- Comprehensive statistics and summaries
+- Integration with Project model
+
+**Orchestrator Integration:**
+- ReviewEngine initialized in AnalysisOrchestrator
+- New `review_project()` method for code reviews
+- Seamless integration with analysis pipeline
+- Optional AI-powered review
+- Configurable output directory
+
 - `file_documentation.md.j2` (280 lines) - File structure, API, metrics
 - `api_reference.md.j2` (137 lines) - Public API reference
