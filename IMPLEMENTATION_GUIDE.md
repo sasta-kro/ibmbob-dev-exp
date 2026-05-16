@@ -2,6 +2,8 @@
 
 This guide provides a high-level roadmap for implementing the Codebase Analysis & Documentation Generator. It complements the technical plan by focusing on **what to build** and **in what order**, without prescribing specific code implementations.
 
+Log the implementation completion reports in `.memory/Implementation_progress/`
+
 ---
 
 ## Overview
