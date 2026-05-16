@@ -13,7 +13,7 @@ import json
 
 from ..models.finding import Finding, Severity, FindingType, CodeLocation
 from ..models.file_info import FileInfo
-from ..services.watson_service import WatsonService
+from ..services.watson_service import AIAnalysisResult, WatsonService
 from ..utils.logger import get_logger
 from ..utils.config import Config
 
@@ -163,7 +163,8 @@ class AIReviewer:
             response = self.watson.analyze_code(
                 code=content,
                 file_path=str(file_info.path),
-                analysis_type='bug_detection'
+                language=file_info.file_type.value,
+                use_cache=True
             )
             
             return self._parse_ai_findings(
@@ -184,7 +185,8 @@ class AIReviewer:
             response = self.watson.analyze_code(
                 code=content,
                 file_path=str(file_info.path),
-                analysis_type='security_analysis'
+                language=file_info.file_type.value,
+                use_cache=True
             )
             
             return self._parse_ai_findings(
@@ -205,7 +207,8 @@ class AIReviewer:
             response = self.watson.analyze_code(
                 code=content,
                 file_path=str(file_info.path),
-                analysis_type='performance_analysis'
+                language=file_info.file_type.value,
+                use_cache=True
             )
             
             return self._parse_ai_findings(
@@ -226,7 +229,8 @@ class AIReviewer:
             response = self.watson.analyze_code(
                 code=content,
                 file_path=str(file_info.path),
-                analysis_type='design_analysis'
+                language=file_info.file_type.value,
+                use_cache=True
             )
             
             return self._parse_ai_findings(
@@ -357,7 +361,7 @@ For each issue, provide:
     
     def _parse_ai_findings(
         self,
-        ai_response: Dict[str, Any],
+        ai_response: Any,
         file_info: FileInfo,
         finding_type: FindingType,
         source: str
@@ -382,13 +386,7 @@ For each issue, provide:
         findings = []
         
         # Handle different response formats
-        findings_data = []
-        if isinstance(ai_response, dict):
-            findings_data = ai_response.get('findings', [])
-            if not findings_data and 'issues' in ai_response:
-                findings_data = ai_response.get('issues', [])
-        elif isinstance(ai_response, list):
-            findings_data = ai_response
+        findings_data = self._extract_finding_data(ai_response, finding_type)
         
         for item in findings_data:
             try:
@@ -404,6 +402,58 @@ For each issue, provide:
                 self.logger.warning(f"Failed to parse AI finding: {e}")
         
         return findings
+    
+    def _extract_finding_data(
+        self,
+        ai_response: Any,
+        finding_type: FindingType
+    ) -> List[Dict[str, Any]]:
+        """Extract finding dictionaries from supported Watson response formats"""
+        if ai_response is None:
+            return []
+        
+        findings_data = []
+        
+        if isinstance(ai_response, dict):
+            findings_data = ai_response.get('findings', [])
+            if not findings_data and 'issues' in ai_response:
+                findings_data = ai_response.get('issues', [])
+        elif isinstance(ai_response, list):
+            findings_data = ai_response
+        elif isinstance(ai_response, AIAnalysisResult):
+            source_items = []
+            if finding_type == FindingType.BUG:
+                source_items = ai_response.potential_issues
+            elif finding_type == FindingType.MAINTAINABILITY:
+                source_items = ai_response.suggestions
+            
+            findings_data = [
+                {
+                    'line': 1,
+                    'title': self._build_ai_title(finding_type),
+                    'description': item,
+                    'severity': 'medium',
+                    'confidence': ai_response.confidence,
+                    'recommendation': item if finding_type == FindingType.MAINTAINABILITY else None
+                }
+                for item in source_items
+            ]
+        
+        return [
+            item
+            for item in findings_data
+            if isinstance(item, dict)
+        ]
+    
+    def _build_ai_title(self, finding_type: FindingType) -> str:
+        """Build a stable title for generic Watson finding data"""
+        titles = {
+            FindingType.BUG: 'AI-detected potential bug',
+            FindingType.SECURITY: 'AI-detected potential security issue',
+            FindingType.PERFORMANCE: 'AI-detected potential performance issue',
+            FindingType.MAINTAINABILITY: 'AI-detected maintainability suggestion'
+        }
+        return titles.get(finding_type, 'AI-detected issue')
     
     def _create_finding_from_ai_data(
         self,

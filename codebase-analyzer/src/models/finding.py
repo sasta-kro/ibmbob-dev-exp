@@ -167,5 +167,9 @@ class FindingSummary(BaseModel):
         summary.false_positive_count = sum(1 for f in findings if f.is_false_positive)
         
         return summary
+    
+    def to_dict(self) -> dict:
+        """Convert to dictionary with proper serialization."""
+        return self.model_dump(mode='json')
 
 # Made with Bob

@@ -5,15 +5,15 @@
 **Project Name:** Codebase Analyzer  
 **Type:** Python Desktop Application (Flet-based)  
 **Purpose:** AI-powered codebase analysis, documentation generation, code review, and improvement suggestions  
-**Current Phase:** Phase 4 Complete (Code Review Engine) - Ready for Phase 5
-**Current Phase:** Phase 3 Stabilization Fix Applied (Documentation Generator) - Runtime smoke verification pending dependency install
+**Current Phase:** Phase 4 Stabilized (Code Review Engine) - Ready for Phase 5 first pass
 **Last Updated:** 2026-05-16
 
 ---
 
 ## Recent Stabilization Notes
 
-- 2026-05-16: Bob's Phase 3 stabilization pass regressed `AnalysisOrchestrator.analyze_project()` by moving `return project` out of the method. The follow-up fix restored the return, removed the unreachable documentation return, connected API reference generation to the documentation flow, and added a smoke test for analysis plus documentation output. Runtime smoke execution is blocked until the project dependency stack is installed.
+- 2026-05-16: Bob's Phase 3 stabilization pass regressed `AnalysisOrchestrator.analyze_project()` by moving `return project` out of the method. The follow-up fix restored the return, removed the unreachable documentation return, connected API reference generation to the documentation flow, and added a smoke test for analysis plus documentation output. Phase 3 and Phase 4 smoke tests passed on 2026-05-16.
+- 2026-05-16: Bob's Phase 4 pass inserted `review_project()` inside `generate_documentation()`, causing documentation generation to skip `INDEX.md` and return `None`. The follow-up fix restored the documentation method boundary, kept review orchestration separate, connected review findings back to the `Project`, added `functionalityAreas` to review JSON output, fixed `FindingSummary` serialization, and corrected `AIReviewer` calls to match the existing `WatsonService.analyze_code()` signature. Phase 3 and Phase 4 smoke tests passed on 2026-05-16.
 
 ---
 

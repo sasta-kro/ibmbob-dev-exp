@@ -98,6 +98,11 @@ class ReviewEngine:
         # Classify and prioritize
         classified = self.classifier.classify_findings(unique_findings)
         prioritized = self.classifier.prioritize_findings(unique_findings)
+        summary = classified['summary']
+        functionality_areas = self._build_functionality_areas(project, prioritized)
+        
+        project.findings = prioritized
+        project.finding_summary = summary
         
         # Build review result
         review_result = {
@@ -106,8 +111,9 @@ class ReviewEngine:
             'total_findings': len(unique_findings),
             'findings': prioritized,
             'classification': classified,
-            'summary': classified['summary'].to_dict(),
-            'statistics': classified['statistics']
+            'summary': summary.to_dict(),
+            'statistics': classified['statistics'],
+            'functionality_areas': functionality_areas
         }
         
         # Generate reports if output directory specified
@@ -164,6 +170,7 @@ class ReviewEngine:
                 'securityCount': review_result['summary']['security_count'],
                 'filesAffected': review_result['statistics']['files_affected']
             },
+            'functionalityAreas': review_result['functionality_areas'],
             'findings': findings_data,
             'statistics': review_result['statistics']
         }
@@ -339,6 +346,72 @@ class ReviewEngine:
             f.write(content)
         
         self.logger.info(f"Markdown report saved to {output_path}")
+    
+    def _build_functionality_areas(
+        self,
+        project: Project,
+        findings: List[Finding]
+    ) -> List[Dict[str, Any]]:
+        """Build review output grouped by project functionality areas"""
+        findings_by_file = {}
+        for finding in findings:
+            relative_path = self._get_relative_finding_path(project, finding)
+            findings_by_file.setdefault(relative_path, []).append(finding)
+        
+        functionality_areas = []
+        grouped_files = set()
+        
+        if project.functionality_map:
+            for group in project.functionality_map.get_all_groups():
+                related_files = [str(file_path) for file_path in group.files]
+                grouped_files.update(related_files)
+                group_findings = []
+                
+                for file_path in related_files:
+                    group_findings.extend(findings_by_file.get(file_path, []))
+                
+                functionality_areas.append({
+                    'id': group.id,
+                    'name': group.name,
+                    'relatedFiles': related_files,
+                    'findings': [
+                        finding.to_dict()
+                        for finding in self.classifier.prioritize_findings(group_findings)
+                    ]
+                })
+        
+        ungrouped_findings = [
+            finding
+            for file_path, file_findings in findings_by_file.items()
+            if file_path not in grouped_files
+            for finding in file_findings
+        ]
+        
+        if ungrouped_findings:
+            functionality_areas.append({
+                'id': 'ungrouped',
+                'name': 'Ungrouped',
+                'relatedFiles': sorted({
+                    self._get_relative_finding_path(project, finding)
+                    for finding in ungrouped_findings
+                }),
+                'findings': [
+                    finding.to_dict()
+                    for finding in self.classifier.prioritize_findings(ungrouped_findings)
+                ]
+            })
+        
+        return functionality_areas
+    
+    def _get_relative_finding_path(self, project: Project, finding: Finding) -> str:
+        """Get a finding path relative to the project root when possible"""
+        file_path = Path(finding.location.file_path)
+        for root_path in project.root_paths:
+            try:
+                return str(file_path.relative_to(root_path))
+            except ValueError:
+                continue
+        return str(file_path)
     
     def get_findings_for_file(
         self,

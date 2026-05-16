@@ -196,6 +196,11 @@ class AnalysisOrchestrator:
         
         # Generate index file
         index_path = output_path / 'INDEX.md'
+        self.index_generator.generate_index(project, doc_files, index_path)
+        
+        logger.info(f"Documentation generated at: {output_path}")
+        return output_path
+    
     def review_project(
         self,
         project: Project,
@@ -230,11 +235,6 @@ class AnalysisOrchestrator:
         
         logger.info(f"Code review complete: {review_result['total_findings']} findings")
         return review_result
-    
-        self.index_generator.generate_index(project, doc_files, index_path)
-        
-        logger.info(f"Documentation generated at: {output_path}")
-        return output_path
     
     def _analyze_files(
         self,

@@ -27,3 +27,9 @@ Order: newest lessons at the bottom (append-only).
 - **The mistake:** Completion was accepted without a smoke test that exercised the public orchestration path and checked the generated documentation artifacts.
 - **How it was solved:** A focused smoke test was added for a tiny fixture project, including duplicate basenames, `Project` return validation, and checks for overview, API reference, index, functionality group, and per-file documentation.
 - **Lesson:** Phase stabilization needs a small end-to-end smoke test that proves the public API return value and required output files before completion is recorded.
+
+### New phase integration must re-run earlier public paths
+- **What happened:** Bob's Phase 4 pass inserted `review_project()` into the middle of `generate_documentation()`, which broke the Phase 3 documentation public path while claiming Phase 4 was complete.
+- **The mistake:** New feature integration was checked in without running a regression smoke test for existing public methods.
+- **How it was solved:** The method boundary was restored, Phase 4 review remained a separate orchestrator method, and a Phase 4 smoke test was added that exercises documentation generation before review execution.
+- **Lesson:** Each phase stabilization must include the previous phase smoke tests plus the new phase smoke tests, especially when editing shared orchestrator code.
