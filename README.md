@@ -1,4 +1,4 @@
-<img width="1920" height="1080" alt="IBM BOB Hackathon Slides" src="https://github.com/user-attachments/assets/a7b94b51-1e19-48fa-bd4c-9dcd26070926" /># Codebase Analyzer
+# Codebase Analyzer
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
 [![Flet](https://img.shields.io/badge/Flet-Desktop%20UI-009DFF?style=flat)](https://flet.dev/)
