@@ -4,6 +4,8 @@ Chart Components
 Simple chart components for data visualization.
 """
 
+import base64
+import math
 from typing import Dict, Optional
 import flet as ft
 from ..theme import AppTheme
@@ -38,41 +40,176 @@ class PieChart(ft.Container):
     def _build_content(self) -> ft.Column:
         total = sum(self.data.values())
 
-        title_text = ft.Text(self.title, size=16, weight=ft.FontWeight.BOLD, color=AppTheme.TEXT_PRIMARY)
-
         default_colors = [AppTheme.PRIMARY, AppTheme.SECONDARY, AppTheme.SUCCESS, AppTheme.WARNING, AppTheme.ERROR,
                           "#78909C", "#AB47BC", "#26A69A", "#EC407A", "#8D6E63"]
 
-        color_for = {}
-        segments = []
         legend_items = []
 
         for i, (label, value) in enumerate(self.data.items()):
             color = self.colors.get(label, default_colors[i % len(default_colors)])
-            color_for[label] = color
             percentage = (value / total * 100) if total > 0 else 0
-
-            if value > 0:
-                segments.append(ft.Container(bgcolor=color, expand=value, height=14, tooltip=f"{label}: {value}"))
 
             legend_items.append(ft.Row(controls=[
                 ft.Container(width=12, height=12, bgcolor=color, border_radius=3),
-                ft.Text(f"{label}", size=12, color=AppTheme.TEXT_PRIMARY),
+                ft.Text(
+                    f"{label}",
+                    size=12,
+                    color=AppTheme.TEXT_PRIMARY,
+                    expand=True,
+                    max_lines=1,
+                    overflow=ft.TextOverflow.ELLIPSIS,
+                ),
                 ft.Text(f"{value} ({percentage:.0f}%)", size=12, color=AppTheme.TEXT_SECONDARY),
             ], spacing=6))
 
-        stacked_bar = ft.Container(
-            content=ft.Row(controls=segments, spacing=1, expand=True),
-            border_radius=7, clip_behavior=ft.ClipBehavior.HARD_EDGE, height=14,
-        ) if segments else ft.Container(height=14, bgcolor="#EEEEEE", border_radius=7)
+        controls = []
+        if self.title:
+            controls.append(
+                ft.Text(self.title, size=16, weight=ft.FontWeight.BOLD, color=AppTheme.TEXT_PRIMARY)
+            )
+            controls.append(ft.Container(height=12))
 
-        return ft.Column(controls=[
-            title_text,
-            ft.Container(height=12),
-            stacked_bar,
-            ft.Container(height=10),
-            ft.Column(controls=legend_items, spacing=4),
-        ], spacing=0)
+        controls.extend([
+            self._build_circular_chart(),
+            ft.Container(height=14),
+            self._build_legend_grid(legend_items),
+        ])
+
+        return ft.Column(controls=controls, spacing=0)
+
+    def _build_circular_chart(self) -> ft.Control:
+        svg_markup = self._build_pie_chart_svg()
+        svg_bytes = svg_markup.encode("utf-8")
+        svg_base64 = base64.b64encode(svg_bytes).decode("utf-8")
+
+        return ft.Container(
+            content=ft.Image(
+                src=f"data:image/svg+xml;base64,{svg_base64}",
+                width=180,
+                height=180,
+            ),
+            alignment=ft.Alignment(0, 0),
+            height=190,
+        )
+
+    def _build_legend_grid(self, legend_items: list[ft.Control]) -> ft.Control:
+        if not legend_items:
+            return ft.Container()
+
+        column_count = 2 if len(legend_items) > 1 else 1
+        items_per_column = math.ceil(len(legend_items) / column_count)
+        legend_columns = []
+
+        for column_index in range(column_count):
+            start_index = column_index * items_per_column
+            end_index = start_index + items_per_column
+            legend_columns.append(
+                ft.Container(
+                    content=ft.Column(
+                        controls=legend_items[start_index:end_index],
+                        spacing=4,
+                    ),
+                    expand=True,
+                )
+            )
+
+        return ft.Row(
+            controls=legend_columns,
+            spacing=12,
+            vertical_alignment=ft.CrossAxisAlignment.START,
+        )
+
+    def _build_pie_chart_svg(self) -> str:
+        total = sum(value for value in self.data.values() if value > 0)
+        size = 180
+        center = size / 2
+        outer_radius = 72
+        inner_radius = 34
+        start_angle = -90.0
+
+        default_colors = [
+            AppTheme.PRIMARY,
+            AppTheme.SECONDARY,
+            AppTheme.SUCCESS,
+            AppTheme.WARNING,
+            AppTheme.ERROR,
+            "#78909C",
+            "#AB47BC",
+            "#26A69A",
+            "#EC407A",
+            "#8D6E63",
+        ]
+
+        slices = []
+
+        if total <= 0:
+            slices.append(
+                f'<circle cx="{center}" cy="{center}" r="{outer_radius}" fill="#EEEEEE" />'
+            )
+        else:
+            for index, (label, value) in enumerate(self.data.items()):
+                if value <= 0:
+                    continue
+
+                color = self.colors.get(label, default_colors[index % len(default_colors)])
+                sweep_angle = (value / total) * 360.0
+                if sweep_angle >= 359.999:
+                    slices.append(
+                        f'<circle cx="{center}" cy="{center}" r="{outer_radius}" fill="{color}" />'
+                    )
+                    break
+                end_angle = start_angle + sweep_angle
+                slices.append(
+                    self._build_donut_slice_path(
+                        center=center,
+                        outer_radius=outer_radius,
+                        inner_radius=inner_radius,
+                        start_angle=start_angle,
+                        end_angle=end_angle,
+                        fill_color=color,
+                    )
+                )
+                start_angle = end_angle
+
+        slices.append(
+            f'<circle cx="{center}" cy="{center}" r="{inner_radius}" fill="white" />'
+        )
+
+        return (
+            f'<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size}" '
+            f'viewBox="0 0 {size} {size}">'
+            + "".join(slices)
+            + "</svg>"
+        )
+
+    def _build_donut_slice_path(
+        self,
+        center: float,
+        outer_radius: float,
+        inner_radius: float,
+        start_angle: float,
+        end_angle: float,
+        fill_color: str,
+    ) -> str:
+        start_outer_x, start_outer_y = self._polar_to_cartesian(center, outer_radius, start_angle)
+        end_outer_x, end_outer_y = self._polar_to_cartesian(center, outer_radius, end_angle)
+        start_inner_x, start_inner_y = self._polar_to_cartesian(center, inner_radius, start_angle)
+        end_inner_x, end_inner_y = self._polar_to_cartesian(center, inner_radius, end_angle)
+        large_arc_flag = 1 if end_angle - start_angle > 180 else 0
+
+        return (
+            f'<path d="M {start_outer_x:.3f} {start_outer_y:.3f} '
+            f'A {outer_radius:.3f} {outer_radius:.3f} 0 {large_arc_flag} 1 {end_outer_x:.3f} {end_outer_y:.3f} '
+            f'L {end_inner_x:.3f} {end_inner_y:.3f} '
+            f'A {inner_radius:.3f} {inner_radius:.3f} 0 {large_arc_flag} 0 {start_inner_x:.3f} {start_inner_y:.3f} Z" '
+            f'fill="{fill_color}" />'
+        )
+
+    def _polar_to_cartesian(self, center: float, radius: float, angle_in_degrees: float) -> tuple[float, float]:
+        angle_in_radians = math.radians(angle_in_degrees)
+        x_coordinate = center + radius * math.cos(angle_in_radians)
+        y_coordinate = center + radius * math.sin(angle_in_radians)
+        return x_coordinate, y_coordinate
 
 
 class BarChart(ft.Container):
