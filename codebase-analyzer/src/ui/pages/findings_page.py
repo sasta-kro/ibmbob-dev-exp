@@ -6,10 +6,8 @@ from typing import List, Optional, Callable
 import flet as ft
 from ...models.finding import Finding
 from ..theme import AppTheme
-from ..components import FindingCard, ChipFilterRow, SortControl
-from ..utils import create_empty_state, create_badge, create_stacked_bar
 
-PAGE_SIZE = 25
+PAGE_SIZE = 50
 
 SEVERITY_COLORS = {
     "critical": AppTheme.CRITICAL,
@@ -17,18 +15,6 @@ SEVERITY_COLORS = {
     "medium": AppTheme.MEDIUM,
     "low": AppTheme.LOW,
     "info": AppTheme.INFO_SEVERITY,
-}
-
-TYPE_COLORS = {
-    "bug": "#D32F2F",
-    "security": "#7B1FA2",
-    "performance": "#F57C00",
-    "style": "#0288D1",
-    "maintainability": "#00796B",
-    "documentation": "#5D4037",
-    "complexity": "#C62828",
-    "duplication": "#AD1457",
-    "best_practice": "#1565C0",
 }
 
 
@@ -44,12 +30,8 @@ class FindingsPage(ft.Container):
         self.filtered_findings = self.all_findings.copy()
         self.on_resolve = on_resolve
         self.on_ignore = on_ignore
-        self._severity_filter: List[str] = []
-        self._type_filter: List[str] = []
-        self._search_query = ""
-        self._sort_option = "Severity"
-        self._sort_asc = True
         self._visible_count = PAGE_SIZE
+        self._search_query = ""
 
         super().__init__(
             content=self._build_content(),
@@ -60,184 +42,122 @@ class FindingsPage(ft.Container):
     def _build_content(self) -> ft.Column:
         if not self.all_findings:
             return ft.Column(controls=[
-                create_empty_state(
-                    icon=ft.Icons.CHECK_CIRCLE,
-                    title="No Findings",
-                    description="No code review findings to display"
-                )
+                ft.Icon(ft.Icons.CHECK_CIRCLE, size=64, color="#BDBDBD"),
+                ft.Text("No Findings", size=20, weight=ft.FontWeight.BOLD, color="#757575"),
+                ft.Text("Run an analysis to see findings here", size=14, color="#9E9E9E"),
             ], horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 alignment=ft.MainAxisAlignment.CENTER, expand=True)
 
-        # Stats bar
-        severity_counts = {}
+        rows = []
+
+        # Title + count
+        rows.append(ft.Text(f"Findings ({len(self.filtered_findings)})",
+                            size=AppTheme.FONT_SIZE_TITLE, weight=ft.FontWeight.BOLD))
+
+        # Severity summary line
+        sev_counts = {}
         for f in self.all_findings:
             s = f.severity.value
-            severity_counts[s] = severity_counts.get(s, 0) + 1
-
-        stat_chips = []
+            sev_counts[s] = sev_counts.get(s, 0) + 1
+        summary_parts = []
         for sev in ["critical", "high", "medium", "low", "info"]:
-            count = severity_counts.get(sev, 0)
-            if count > 0:
-                stat_chips.append(ft.Container(
-                    content=ft.Row(controls=[
-                        ft.Container(width=8, height=8, bgcolor=SEVERITY_COLORS.get(sev, "#999"),
-                                     border_radius=4),
-                        ft.Text(f"{sev.capitalize()} {count}", size=12, color=AppTheme.TEXT_PRIMARY,
-                                weight=ft.FontWeight.BOLD),
-                    ], spacing=6),
-                    padding=ft.Padding(left=10, right=10, top=4, bottom=4),
-                    border=ft.Border.all(1, SEVERITY_COLORS.get(sev, "#999")),
-                    border_radius=12,
+            c = sev_counts.get(sev, 0)
+            if c > 0:
+                color = SEVERITY_COLORS.get(sev, "#999")
+                summary_parts.append(ft.Container(
+                    content=ft.Text(f"{sev.upper()} {c}", size=11, color="white",
+                                    weight=ft.FontWeight.BOLD),
+                    bgcolor=color, border_radius=10,
+                    padding=ft.Padding(left=8, right=8, top=3, bottom=3),
                 ))
+        if summary_parts:
+            rows.append(ft.Row(controls=summary_parts, spacing=6))
 
-        resolved = sum(1 for f in self.all_findings if f.is_resolved)
-        ignored = sum(1 for f in self.all_findings if f.is_false_positive)
-        if resolved or ignored:
-            stat_chips.append(ft.Container(expand=True))
-            if resolved:
-                stat_chips.append(ft.Text(f"{resolved} resolved", size=11, color=AppTheme.SUCCESS))
-            if ignored:
-                stat_chips.append(ft.Text(f"{ignored} ignored", size=11, color=AppTheme.TEXT_DISABLED))
-
-        stats_row = ft.Row(controls=stat_chips, spacing=8, wrap=True)
-
-        stacked = create_stacked_bar(severity_counts, SEVERITY_COLORS, height=6)
-
-        # Header
-        self._search_field = ft.TextField(
+        # Search
+        rows.append(ft.TextField(
             hint_text="Search findings...", prefix_icon=ft.Icons.SEARCH,
             on_change=self._on_search, dense=True, border_color=AppTheme.BORDER_COLOR,
-            width=280, text_size=13,
-        )
-        header = ft.Row(controls=[
-            ft.Text(f"Findings ({len(self.filtered_findings)})", size=AppTheme.FONT_SIZE_TITLE,
-                    weight=ft.FontWeight.BOLD, color=AppTheme.TEXT_PRIMARY),
-            ft.Container(expand=True),
-            self._search_field,
-        ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+            text_size=13,
+        ))
 
-        # Chip filters
-        severity_options = sorted({f.severity.value for f in self.all_findings})
-        type_options = sorted({f.finding_type.value for f in self.all_findings})
+        rows.append(ft.Divider(height=1, color=AppTheme.DIVIDER_COLOR))
 
-        self._severity_chips = ChipFilterRow(
-            label="Severity:", options=severity_options,
-            color_map=SEVERITY_COLORS, on_change=self._on_severity_filter)
-        self._type_chips = ChipFilterRow(
-            label="Type:", options=type_options,
-            color_map=TYPE_COLORS, on_change=self._on_type_filter)
-
-        sort_control = SortControl(
-            options=["Severity", "Category", "File"],
-            on_sort_change=self._on_sort_change, default_option="Severity")
-
-        filter_row = ft.Row(controls=[
-            self._severity_chips,
-            ft.Container(width=16),
-            self._type_chips,
-            ft.Container(expand=True),
-            sort_control,
-        ], spacing=0, wrap=True)
-
-        # Findings list with pagination
-        self._list_view = self._build_list_view()
-
-        return ft.Column(controls=[
-            header,
-            ft.Container(height=8),
-            stats_row,
-            stacked,
-            ft.Container(height=10),
-            filter_row,
-            ft.Divider(height=1, color=AppTheme.DIVIDER_COLOR),
-            self._list_view,
-        ], spacing=6, expand=True)
-
-    def _build_list_view(self) -> ft.Control:
-        if not self.filtered_findings:
-            return ft.Column(controls=[
-                create_empty_state(icon=ft.Icons.FILTER_ALT_OFF, title="No Matching Findings",
-                                   description="Adjust filters to see results")
-            ], horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                alignment=ft.MainAxisAlignment.CENTER, expand=True)
-
+        # Finding rows — plain containers, no custom cards
         visible = self.filtered_findings[:self._visible_count]
-        cards = [FindingCard(finding=f, on_resolve=self.on_resolve, on_ignore=self.on_ignore)
-                 for f in visible]
+        for f in visible:
+            sev = f.severity.value
+            color = SEVERITY_COLORS.get(sev, "#999")
+            loc = f.location
 
+            line_label = str(loc.line_start)
+            if loc.line_end and loc.line_end != loc.line_start:
+                line_label = f"{loc.line_start}-{loc.line_end}"
+
+            row = ft.Container(
+                content=ft.Row(controls=[
+                    ft.Container(
+                        content=ft.Text(sev.upper(), size=10, color="white",
+                                        weight=ft.FontWeight.BOLD),
+                        bgcolor=color, border_radius=4, width=70,
+                        alignment=ft.Alignment(0, 0),
+                        padding=ft.Padding(left=6, right=6, top=4, bottom=4),
+                    ),
+                    ft.Column(controls=[
+                        ft.Text(f.title, size=14, weight=ft.FontWeight.BOLD,
+                                color=AppTheme.TEXT_PRIMARY),
+                        ft.Text(f.description, size=12, color=AppTheme.TEXT_PRIMARY,
+                                max_lines=3, overflow=ft.TextOverflow.ELLIPSIS),
+                        ft.Text(f"{loc.file_path}:{line_label}", size=11,
+                                color=AppTheme.TEXT_SECONDARY),
+                    ], spacing=2, expand=True),
+                    ft.Text(f.finding_type.value.replace("_", " "), size=11,
+                            color=AppTheme.TEXT_DISABLED),
+                ], spacing=12, vertical_alignment=ft.CrossAxisAlignment.CENTER),
+                padding=ft.Padding(left=12, right=12, top=10, bottom=10),
+                border=ft.Border(bottom=ft.BorderSide(1, AppTheme.DIVIDER_COLOR)),
+            )
+            rows.append(row)
+
+        # Show more
         remaining = len(self.filtered_findings) - self._visible_count
         if remaining > 0:
-            cards.append(ft.Container(
+            rows.append(ft.Container(
                 content=ft.TextButton(
-                    content=ft.Row(controls=[
-                        ft.Icon(ft.Icons.EXPAND_MORE, size=18, color=AppTheme.PRIMARY),
-                        ft.Text(f"Show more ({remaining} remaining)", size=14,
-                                color=AppTheme.PRIMARY, weight=ft.FontWeight.BOLD),
-                    ], spacing=6, alignment=ft.MainAxisAlignment.CENTER),
+                    content=ft.Text(f"Show more ({remaining} remaining)",
+                                    size=14, color=AppTheme.PRIMARY,
+                                    weight=ft.FontWeight.BOLD),
                     on_click=self._load_more,
                 ),
                 alignment=ft.Alignment(0, 0),
                 padding=ft.Padding(top=12, bottom=12, left=0, right=0),
             ))
 
-        return ft.ListView(controls=cards, spacing=10, expand=True)
+        return ft.Column(controls=rows, spacing=6,
+                         scroll=ft.ScrollMode.AUTO, expand=True)
 
     def _load_more(self, e):
         self._visible_count += PAGE_SIZE
-        self._list_view.controls = self._build_list_view().controls
-        self._list_view.update()
-
-    def _apply_filters(self):
-        self.filtered_findings = self.all_findings.copy()
-
-        if self._severity_filter:
-            self.filtered_findings = [f for f in self.filtered_findings
-                                       if f.severity.value in self._severity_filter]
-        if self._type_filter:
-            self.filtered_findings = [f for f in self.filtered_findings
-                                       if f.finding_type.value in self._type_filter]
-        if self._search_query:
-            q = self._search_query.lower()
-            self.filtered_findings = [f for f in self.filtered_findings
-                                       if q in f.title.lower() or q in f.description.lower()
-                                       or q in str(f.location.file_path).lower()]
-        self._apply_sort()
-        self._visible_count = PAGE_SIZE
         self.content = self._build_content()
         self.update()
-
-    def _apply_sort(self):
-        if self._sort_option == "Severity":
-            order = {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}
-            self.filtered_findings.sort(key=lambda f: order.get(f.severity.value, 5),
-                                         reverse=not self._sort_asc)
-        elif self._sort_option == "Category":
-            self.filtered_findings.sort(key=lambda f: f.finding_type.value, reverse=not self._sort_asc)
-        elif self._sort_option == "File":
-            self.filtered_findings.sort(key=lambda f: str(f.location.file_path), reverse=not self._sort_asc)
-
-    def _on_severity_filter(self, selected: List[str]):
-        self._severity_filter = selected
-        self._apply_filters()
-
-    def _on_type_filter(self, selected: List[str]):
-        self._type_filter = selected
-        self._apply_filters()
 
     def _on_search(self, e):
         self._search_query = e.control.value or ""
         self._apply_filters()
 
-    def _on_sort_change(self, option: str, ascending: bool):
-        self._sort_option = option
-        self._sort_asc = ascending
-        self._apply_filters()
+    def _apply_filters(self):
+        self.filtered_findings = self.all_findings.copy()
+        if self._search_query:
+            q = self._search_query.lower()
+            self.filtered_findings = [f for f in self.filtered_findings
+                                       if q in f.title.lower() or q in f.description.lower()
+                                       or q in str(f.location.file_path).lower()]
+        self._visible_count = PAGE_SIZE
+        self.content = self._build_content()
+        self.update()
 
     def refresh(self, findings: List[Finding]):
         self.all_findings = findings
         self.filtered_findings = findings.copy()
-        self._severity_filter = []
-        self._type_filter = []
         self._search_query = ""
         self._visible_count = PAGE_SIZE
         self.content = self._build_content()
