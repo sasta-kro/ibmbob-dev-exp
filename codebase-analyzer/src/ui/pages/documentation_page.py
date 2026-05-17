@@ -23,14 +23,6 @@ CATEGORY_COLORS = {
     "Model": "#6A1B9A",
 }
 
-LANG_COLORS = {
-    "Python": "#3572A5", "JavaScript": "#F7DF1E", "TypeScript": "#3178C6",
-    "Java": "#B07219", "Go": "#00ADD8", "Ruby": "#CC342D", "PHP": "#4F5D95",
-    "C": "#555555", "C++": "#F34B7D", "Rust": "#DEA584", "Swift": "#FA7343",
-    "HTML": "#E34F26", "CSS": "#1572B6", "SQL": "#336791", "Shell": "#4EAA25",
-}
-
-
 class DocumentationPage(ft.Container):
 
     def __init__(
@@ -45,6 +37,19 @@ class DocumentationPage(ft.Container):
         self.selected_file = self.doc_files[0] if self.doc_files else None
         self._nav_mode = "groups"
         self._expanded_groups: set = set()
+        self._mounted = False
+        self._search_field = ft.TextField(
+            hint_text="Search docs...", prefix_icon=ft.Icons.SEARCH,
+            on_change=self._on_search, dense=True, border_color=AppTheme.BORDER_COLOR,
+            text_size=12, value=self.search_query,
+        )
+        self._nav_panel_container = ft.Container(width=280, bgcolor="#FAFAFA", padding=0)
+        self._tab_row_container = ft.Container(padding=ft.Padding(left=12, right=12, top=8, bottom=4))
+        self._file_list_container = ft.Container(
+            expand=True,
+            padding=ft.Padding(left=8, right=8, top=4, bottom=8),
+        )
+        self._viewer_container = ft.Container(expand=True, padding=0)
 
         super().__init__(
             content=self._build_content(),
@@ -71,14 +76,15 @@ class DocumentationPage(ft.Container):
                 description="Run documentation generation to create files")
 
         hero = self._build_hero()
-        nav_panel = ft.Container(content=self._build_nav_panel(), width=280,
-                                  bgcolor="#FAFAFA", padding=0)
-        viewer = ft.Container(content=self._build_viewer(), expand=True, padding=0)
+        self._nav_panel_container.content = self._build_nav_panel()
+        self._tab_row_container.content = self._build_tab_row()
+        self._file_list_container.content = self._build_current_nav_list()
+        self._viewer_container.content = self._build_viewer()
 
         body = ft.Row(controls=[
-            nav_panel,
+            self._nav_panel_container,
             ft.VerticalDivider(width=1, color=AppTheme.DIVIDER_COLOR),
-            viewer,
+            self._viewer_container,
         ], spacing=0, expand=True)
 
         return ft.Column(controls=[hero, body], spacing=0, expand=True)
@@ -108,40 +114,41 @@ class DocumentationPage(ft.Container):
 
         metric_widgets = []
         for icon, label, color in metrics:
-            metric_widgets.append(ft.Container(
-                content=ft.Row(controls=[
-                    ft.Icon(icon, size=14, color=color),
-                    ft.Text(label, size=11, color=AppTheme.TEXT_PRIMARY),
-                ], spacing=4),
-                padding=ft.Padding(left=8, right=8, top=3, bottom=3),
-                border=ft.Border.all(1, "#E0E0E0"), border_radius=12,
-            ))
+            metric_widgets.append(
+                ft.Container(
+                    content=ft.Container(
+                        content=ft.Row(
+                            controls=[
+                                ft.Icon(icon, size=14, color=color),
+                                ft.Text(
+                                    label,
+                                    size=11,
+                                    color=AppTheme.TEXT_PRIMARY,
+                                    text_align=ft.TextAlign.CENTER,
+                                ),
+                            ],
+                            spacing=4,
+                            alignment=ft.MainAxisAlignment.CENTER,
+                        ),
+                        padding=ft.Padding(left=8, right=8, top=3, bottom=3),
+                        border=ft.Border.all(1, "#E0E0E0"),
+                        border_radius=12,
+                    ),
+                    expand=True,
+                )
+            )
 
-        metrics_row = ft.Row(controls=metric_widgets, spacing=6, wrap=True)
-
-        # Language + framework chips
-        chips = []
-        for lang, count in sorted(m.languages.items(), key=lambda x: -x[1])[:8]:
-            color = LANG_COLORS.get(lang, "#78909C")
-            chips.append(ft.Container(
-                content=ft.Text(f"{lang} ({count})", size=10, color="white", weight=ft.FontWeight.BOLD),
-                bgcolor=color, border_radius=10,
-                padding=ft.Padding(left=8, right=8, top=2, bottom=2),
-            ))
-        if hasattr(m, 'frameworks') and m.frameworks:
-            for fw in m.frameworks[:6]:
-                chips.append(ft.Container(
-                    content=ft.Text(fw, size=10, color=AppTheme.PRIMARY, weight=ft.FontWeight.BOLD),
-                    border=ft.Border.all(1, AppTheme.PRIMARY), border_radius=10,
-                    padding=ft.Padding(left=8, right=8, top=2, bottom=2),
-                ))
-        chips_row = ft.Row(controls=chips, spacing=4, wrap=True)
+        metrics_row = ft.Row(
+            controls=metric_widgets,
+            spacing=6,
+            wrap=False,
+            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+        )
 
         return ft.Container(
             content=ft.Column(controls=[
                 ft.Row(controls=[name_col], spacing=0),
                 metrics_row,
-                chips_row,
             ], spacing=8),
             padding=ft.Padding(left=24, right=24, top=16, bottom=12),
             bgcolor="white",
@@ -150,17 +157,9 @@ class DocumentationPage(ft.Container):
 
     # ── Navigation panel ───────────────────────────────────────
 
-    def _build_nav_panel(self) -> ft.Column:
-        # Search
-        search = ft.TextField(
-            hint_text="Search docs...", prefix_icon=ft.Icons.SEARCH,
-            on_change=self._on_search, dense=True, border_color=AppTheme.BORDER_COLOR,
-            text_size=12, value=self.search_query,
-        )
-
-        # Tab toggle
+    def _build_tab_row(self) -> ft.Row:
         groups_active = self._nav_mode == "groups"
-        tab_row = ft.Row(controls=[
+        return ft.Row(controls=[
             ft.Container(
                 content=ft.Text("By Group", size=12, weight=ft.FontWeight.BOLD,
                                 color=AppTheme.PRIMARY if groups_active else AppTheme.TEXT_SECONDARY),
@@ -179,18 +178,17 @@ class DocumentationPage(ft.Container):
             ),
         ], spacing=4)
 
-        # File list
+    def _build_current_nav_list(self) -> ft.Control:
         if self._nav_mode == "groups":
-            file_list = self._build_group_nav()
-        else:
-            file_list = self._build_flat_nav()
+            return self._build_group_nav()
+        return self._build_flat_nav()
 
+    def _build_nav_panel(self) -> ft.Column:
         return ft.Column(controls=[
-            ft.Container(content=search, padding=ft.Padding(left=12, right=12, top=12, bottom=0)),
-            ft.Container(content=tab_row, padding=ft.Padding(left=12, right=12, top=8, bottom=4)),
+            ft.Container(content=self._search_field, padding=ft.Padding(left=12, right=12, top=12, bottom=0)),
+            self._tab_row_container,
             ft.Divider(height=1, color=AppTheme.DIVIDER_COLOR),
-            ft.Container(content=file_list, expand=True,
-                          padding=ft.Padding(left=8, right=8, top=4, bottom=8)),
+            self._file_list_container,
         ], spacing=0, expand=True)
 
     def _build_group_nav(self) -> ft.ListView:
@@ -432,26 +430,40 @@ class DocumentationPage(ft.Container):
 
     def _select_file(self, path: Path):
         self.selected_file = path
-        self.content = self._build_content()
-        self.update()
+        self._viewer_container.content = self._build_viewer()
+        self._file_list_container.content = self._build_current_nav_list()
+        self._request_update()
 
     def _on_search(self, event):
         self.search_query = event.control.value or ""
+        self._search_field.value = self.search_query
         matches = self._get_matching_files()
         if self.selected_file not in matches:
             self.selected_file = matches[0] if matches else None
-        self.content = self._build_content()
-        self.update()
+        self._file_list_container.content = self._build_current_nav_list()
+        self._viewer_container.content = self._build_viewer()
+        self._request_update()
 
     def _set_nav_mode(self, mode: str):
         self._nav_mode = mode
-        self.content = self._build_content()
-        self.update()
+        self._tab_row_container.content = self._build_tab_row()
+        self._file_list_container.content = self._build_current_nav_list()
+        self._request_update()
 
     def _toggle_group(self, group_id: str):
         if group_id in self._expanded_groups:
             self._expanded_groups.discard(group_id)
         else:
             self._expanded_groups.add(group_id)
-        self.content = self._build_content()
-        self.update()
+        self._file_list_container.content = self._build_current_nav_list()
+        self._request_update()
+
+    def _request_update(self):
+        if self._mounted:
+            self.update()
+
+    def did_mount(self):
+        self._mounted = True
+
+    def did_unmount(self):
+        self._mounted = False
