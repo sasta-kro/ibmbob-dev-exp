@@ -37,6 +37,7 @@ ENV/
 # Environment Variables
 .env
 .env.local
+config/user_config.json
 
 # Logs
 logs/
