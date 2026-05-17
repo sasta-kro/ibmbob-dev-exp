@@ -109,36 +109,6 @@ class SettingsPage(ft.Container):
             elevation=2
         )
 
-        # Appearance settings section
-        appearance_section = ft.Card(
-            content=ft.Container(
-                content=ft.Column(
-                    controls=[
-                        ft.Text(
-                            "Appearance",
-                            size=AppTheme.FONT_SIZE_LARGE,
-                            weight=ft.FontWeight.BOLD
-                        ),
-                        ft.Divider(height=1, color=AppTheme.DIVIDER_COLOR),
-                        ft.RadioGroup(
-                            content=ft.Column(
-                                controls=[
-                                    ft.Radio(value="light", label="Light Theme"),
-                                    ft.Radio(value="dark", label="Dark Theme"),
-                                    ft.Radio(value="system", label="System Default")
-                                ]
-                            ),
-                            value=self.settings["theme"],
-                            on_change=lambda e: self._update_setting("theme", e.control.value)
-                        )
-                    ],
-                    spacing=8
-                ),
-                padding=AppTheme.SPACING_LARGE
-            ),
-            elevation=2
-        )
-
         # About section
         about_section = ft.Card(
             content=ft.Container(
@@ -161,12 +131,9 @@ class SettingsPage(ft.Container):
                         ),
                         ft.Container(height=8),
                         ft.TextButton(
-                            "View Documentation",
-                            icon=ft.Icons.OPEN_IN_NEW
-                        ),
-                        ft.TextButton(
-                            "Report an Issue",
-                            icon=ft.Icons.BUG_REPORT
+                            content=ft.Text("View Documentation"),
+                            icon=ft.Icons.OPEN_IN_NEW,
+                            url="https://github.com/sasta-kro/ibmbob-dev-exp",
                         )
                     ],
                     spacing=8
@@ -203,8 +170,6 @@ class SettingsPage(ft.Container):
                 header,
                 ft.Container(height=AppTheme.SPACING_LARGE),
                 analysis_section,
-                ft.Container(height=AppTheme.SPACING_MEDIUM),
-                appearance_section,
                 ft.Container(height=AppTheme.SPACING_MEDIUM),
                 about_section,
                 ft.Container(height=AppTheme.SPACING_LARGE),
