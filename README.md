@@ -1,8 +1,16 @@
 # Codebase Analyzer
 
+[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
+[![Flet](https://img.shields.io/badge/Flet-Desktop%20UI-009DFF?style=flat)](https://flet.dev/)
+[![Pydantic](https://img.shields.io/badge/Pydantic-Data%20Models-E92063?style=flat)](https://docs.pydantic.dev/)
+[![IBM watsonx.ai](https://img.shields.io/badge/IBM-watsonx.ai-052FAD?style=flat&logo=ibm&logoColor=white)](https://www.ibm.com/products/watsonx-ai)
+[![SQLite](https://img.shields.io/badge/SQLite-Cache-003B57?style=flat&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
+[![Markdown](https://img.shields.io/badge/Markdown-Docs-000000?style=flat&logo=markdown&logoColor=white)](https://www.markdownguide.org/)
+[![License](https://img.shields.io/badge/License-MIT-green?style=flat)](LICENSE)
+
 Codebase Analyzer is a desktop app that turns a repository into an organized code intelligence workspace. The app scans a codebase, maps repository structure, groups related files, generates Markdown documentation, finds risky code patterns, and turns review results into prioritized improvement plans.
 
-The goal is simple: make an unfamiliar codebase feel readable, searchable, and ready for action from one place.
+The goal is simple. Make an unfamiliar codebase feel readable, searchable, and ready for action from one place.
 
 Built for the IBM Bob Hackathon, the project focuses on the theme of turning idea into impact faster. The app highlights how repository-aware AI workflows can reduce repetitive engineering work, speed up onboarding, and help builders move from scattered source files to clear next steps.
 
@@ -10,16 +18,25 @@ Built for the IBM Bob Hackathon, the project focuses on the theme of turning ide
 
 Modern repositories become hard to understand fast. Important logic gets spread across folders, documentation falls behind, review notes live outside the project, and improvement work becomes difficult to prioritize.
 
-Codebase Analyzer brings the first-pass workflow into one app:
+Codebase Analyzer brings the first-pass workflow into one app.
 
 - See the project shape without manually reading every file
 - Generate useful Markdown docs from the real codebase
 - Review security, quality, complexity, and maintainability risks
 - Convert findings into ranked suggestions with effort and impact
-- Browse docs, findings, suggestions, and metrics in a clean desktop dashboard
+- Browse docs, findings, suggestions, and metrics in a clean modern desktop dashboard
 - Use IBM watsonx.ai for optional AI-assisted code understanding
 
 ## Core Features
+
+### Modern Desktop Workspace
+
+- Sleek left-rail navigation for Home, Scan, Overview, Docs, Findings, Suggestions, and Settings
+- Card-based overview with large project metrics, framework chips, and readable donut charts
+- Search-first documentation browser with grouped navigation and built-in Markdown rendering
+- Focused findings and suggestions queues with severity badges, priority scores, and fast filtering
+- Smooth scan progress screen with stage tracking, current file activity, and recent file history
+- Calm settings panel for Watson credentials, model settings, and analysis toggles
 
 ### Repository Scan
 
@@ -46,7 +63,7 @@ Codebase Analyzer brings the first-pass workflow into one app:
 
 ### Documentation Generator
 
-The app creates Markdown output that is useful for humans and AI coding agents:
+The app creates Markdown output that is useful for humans and AI coding agents.
 
 - `PROJECT_OVERVIEW.md`
 - `INDEX.md`
@@ -58,7 +75,7 @@ Generated docs include metrics, public APIs, classes, functions, imports, depend
 
 ### Code Review Engine
 
-Static analysis and custom checks detect practical issues:
+Static analysis and custom checks detect practical issues.
 
 - hardcoded passwords and API keys
 - SQL injection patterns
@@ -71,14 +88,14 @@ Static analysis and custom checks detect practical issues:
 - Bandit security findings
 - common Python style and reliability patterns
 
-Review output is saved as:
+Review output files
 
 - `review-findings.json`
 - `REVIEW_REPORT.md`
 
 ### Improvement Suggestions
 
-Findings become actionable suggestions with:
+Findings become actionable suggestions with ranking data and implementation context.
 
 - priority score
 - effort level
@@ -92,26 +109,26 @@ Findings become actionable suggestions with:
 - implementation steps
 - estimated time
 
-Roadmap output is saved as:
+Roadmap output files
 
 - `improvement-suggestions.json`
 - `IMPROVEMENT_ROADMAP.md`
 
 ### Desktop Dashboard
 
-The Flet UI provides a single workspace for the whole flow:
+The Flet UI provides a single workspace for the whole flow.
 
 - Home page with recent scan history
-- Scan page with folder selection, analysis options, progress stages, and recent file activity
-- Overview page with metrics and distribution charts
-- Documentation browser with search, group navigation, and Markdown rendering
-- Findings page with searchable review results
-- Suggestions page with searchable priority-ranked improvements
+- Scan page with folder selection, analysis options, smooth progress stages, and recent file activity
+- Overview page with metric cards, distribution charts, and quick navigation
+- Documentation browser with search, grouped folders, compact metric pills, and Markdown rendering
+- Findings page with searchable review results and severity badges
+- Suggestions page with searchable priority-ranked improvements and effort-impact tags
 - Settings page for Watson credentials, model settings, and analysis options
 
 ## IBM Bob Hackathon Fit
 
-This project is designed around real developer workflow acceleration:
+This project is designed around real developer workflow acceleration.
 
 - Full repository context instead of isolated code snippets
 - Fast project understanding for unfamiliar codebases
@@ -119,7 +136,7 @@ This project is designed around real developer workflow acceleration:
 - Review findings converted into implementation-ready improvement plans
 - Practical AI-assisted development that keeps code, docs, review, and next actions in one place
 
-The strongest pitch framing is convenience with substance: one workflow for understanding, documenting, reviewing, and improving a codebase.
+The strongest pitch framing is convenience with substance. One workflow for understanding, documenting, reviewing, and improving a codebase.
 
 ## Current Language Support
 
@@ -171,7 +188,7 @@ Storage
 
 ## Generated Output
 
-After a scan, project artifacts are written into the analyzed project under:
+After a scan, project artifacts are written into the analyzed project under this folder.
 
 ```text
 .codebase-analyzer/
@@ -189,7 +206,7 @@ After a scan, project artifacts are written into the analyzed project under:
     IMPROVEMENT_ROADMAP.md
 ```
 
-Recent scan history is stored locally under:
+Recent scan history is stored locally under this folder.
 
 ```text
 ~/.codebase-analyzer/history/
@@ -212,7 +229,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Windows activation:
+Windows activation
 
 ```bash
 .venv\Scripts\activate
@@ -220,13 +237,13 @@ Windows activation:
 
 ### Configure Watson
 
-Create an environment file:
+Create an environment file.
 
 ```bash
 cp .env.example .env
 ```
 
-Set the required values:
+Set the required values.
 
 ```env
 WATSON_API_KEY=replace_with_api_key
@@ -237,7 +254,7 @@ WATSON_MAX_TOKENS=2000
 WATSON_TEMPERATURE=0
 ```
 
-Credentials can also be entered through the app settings screen. User settings are saved to:
+Credentials can also be entered through the app settings screen. User settings are saved to this file.
 
 ```text
 codebase-analyzer/config/user_config.json
@@ -253,7 +270,7 @@ source .venv/bin/activate
 python run_ui.py
 ```
 
-Windows:
+Windows
 
 ```bash
 cd codebase-analyzer
@@ -267,7 +284,7 @@ python run_ui.py
 2. Enter Watson credentials in Settings when AI features are needed.
 3. Start a new analysis.
 4. Select or paste a project folder path.
-5. Choose analysis options:
+5. Choose analysis options.
    - AI-powered analysis
    - documentation generation
    - code review
@@ -280,7 +297,7 @@ python run_ui.py
 
 ### Broader Language Intelligence
 
-Planned language expansion includes deeper support for the most common production stacks:
+Planned language expansion includes deeper support for the most common production stacks.
 
 - Java
 - C#
@@ -302,7 +319,7 @@ Future versions should add full AST parsing, framework-specific conventions, pub
 
 The current implementation integrates IBM watsonx.ai. A future provider adapter layer should make the AI backend swappable, so each team can choose a preferred model stack.
 
-Planned backend options include:
+Planned backend options include the following.
 
 - IBM watsonx.ai models
 - IBM Granite code models
@@ -316,7 +333,7 @@ The target design is a simple provider interface for code summaries, review find
 
 ### More Agent-Friendly Output
 
-Future documentation output can become even more useful for AI coding agents:
+Future documentation output can become even more useful for AI coding agents.
 
 - compact repository maps
 - task-ready context packs
@@ -327,7 +344,7 @@ Future documentation output can become even more useful for AI coding agents:
 
 ### Smarter Review And Planning
 
-Planned upgrades:
+Planned upgrades include the following.
 
 - deeper cross-file bug detection
 - duplicate logic detection
@@ -341,7 +358,7 @@ Planned upgrades:
 
 ### Team And Workflow Features
 
-Potential goals:
+Potential goals include the following.
 
 - project comparison across scans
 - trend charts across time
