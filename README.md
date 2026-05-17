@@ -1,301 +1,363 @@
-# 🚀 Codebase Analyzer: Enterprise-Grade Intelligent Code Intelligence Platform
+# Codebase Analyzer
 
-> **Revolutionary AI-Powered Code Analysis & Documentation Automation System**
+Codebase Analyzer is a desktop app that turns a repository into an organized code intelligence workspace. The app scans a codebase, maps repository structure, groups related files, generates Markdown documentation, finds risky code patterns, and turns review results into prioritized improvement plans.
 
-Transform any codebase into comprehensive, production-ready documentation with cutting-edge artificial intelligence. The Codebase Analyzer leverages advanced machine learning algorithms, sophisticated static analysis engines, and enterprise-grade IBM Watson AI to deliver unprecedented insights into software architecture, code quality, and technical debt.
+The goal is simple: make an unfamiliar codebase feel readable, searchable, and ready for action from one place.
 
----
+Built for the IBM Bob Hackathon, the project focuses on the theme of turning idea into impact faster. The app highlights how repository-aware AI workflows can reduce repetitive engineering work, speed up onboarding, and help builders move from scattered source files to clear next steps.
 
-## 🌟 Why Codebase Analyzer?
+## Why This Matters
 
-**For Non-Technical Stakeholders:**
-- **Instant Visibility**: Gain immediate understanding of complex software projects without reading a single line of code
-- **Risk Mitigation**: Automatically identify security vulnerabilities, technical debt, and maintenance bottlenecks before they become critical
-- **Strategic Planning**: Data-driven insights enable informed decision-making about resource allocation and project timelines
-- **Quality Assurance**: Continuous monitoring ensures code quality standards are maintained across development teams
-- **Cost Optimization**: Reduce technical debt and prevent expensive refactoring by catching issues early
+Modern repositories become hard to understand fast. Important logic gets spread across folders, documentation falls behind, review notes live outside the project, and improvement work becomes difficult to prioritize.
 
-**For Technical Teams:**
-- **Accelerated Onboarding**: New developers understand complex codebases 10x faster with auto-generated architectural documentation
-- **Intelligent Code Review**: AI-powered analysis detects subtle bugs, security flaws, and performance issues that traditional tools miss
-- **Automated Documentation**: Eliminate documentation debt with continuously updated, comprehensive technical documentation
-- **Actionable Insights**: Prioritized improvement suggestions with effort estimation and impact analysis
-- **Multi-Language Support**: Unified analysis across Python, JavaScript, and TypeScript ecosystems
+Codebase Analyzer brings the first-pass workflow into one app:
 
----
+- See the project shape without manually reading every file
+- Generate useful Markdown docs from the real codebase
+- Review security, quality, complexity, and maintainability risks
+- Convert findings into ranked suggestions with effort and impact
+- Browse docs, findings, suggestions, and metrics in a clean desktop dashboard
+- Use IBM watsonx.ai for optional AI-assisted code understanding
 
-## ✨ Revolutionary Features
+## Core Features
 
-### 🔍 **Hyper-Intelligent Code Scanning Engine**
-- **Advanced Pattern Recognition**: Proprietary algorithms recursively traverse directory structures with military-grade precision
-- **Smart Filtering**: Gitignore-compatible pattern matching eliminates noise and focuses on critical code
-- **Multi-Language Detection**: Automatic language identification and context-aware parsing
-- **Dependency Graph Visualization**: Real-time relationship mapping between code modules and components
+### Repository Scan
 
-### 🤖 **IBM Watson AI Integration**
-- **Cognitive Code Understanding**: Leverages IBM's enterprise-grade watsonx.ai platform for semantic code analysis
-- **Natural Language Processing**: Transforms complex code into human-readable explanations
-- **Predictive Analytics**: Machine learning models identify potential issues before they manifest
-- **Contextual Intelligence**: Deep learning algorithms understand code intent, not just syntax
+- Recursive project scanning with ignore rules for dependencies, build outputs, caches, binary files, logs, and environment files
+- File type detection for Python, JavaScript, TypeScript, JSON, YAML, Markdown, text, and unknown files
+- Safe handling for large files and unreadable files
+- SHA256 content hashes for cache-aware repeat analysis
+- Framework detection for React, Vue, Angular, Express, Next.js, Django, Flask, FastAPI, and Spring
 
-### 📚 **Automated Documentation Generation**
-- **Production-Ready Output**: Enterprise-quality Markdown documentation generated in seconds
-- **Intelligent Structuring**: AI-powered organization groups related functionality automatically
-- **API Reference Generation**: Complete API documentation with parameter descriptions and usage examples
-- **Cross-Reference Linking**: Automatic hyperlink creation between related code elements
+### Code Structure Analysis
 
-### 🔒 **Military-Grade Security Analysis**
-- **Vulnerability Detection**: Multi-layered security scanning identifies OWASP Top 10 vulnerabilities
-- **Compliance Checking**: Automated verification against industry security standards
-- **Threat Modeling**: AI-powered risk assessment for potential attack vectors
-- **Best Practice Enforcement**: Continuous validation against security coding guidelines
+- Python AST parsing for imports, functions, classes, decorators, parameters, return types, and docstrings
+- Complexity metrics for Python functions and files
+- Language feature detection for async code, type hints, decorators, context managers, generators, comprehensions, f-strings, and dataclass-style patterns
+- Basic JavaScript and TypeScript import extraction
+- JavaScript framework pattern detection for React, Vue, Angular, Express, and Next.js
 
-### 💡 **Intelligent Improvement Recommendations**
-- **Prioritized Action Items**: Machine learning algorithms rank suggestions by impact and effort
-- **Implementation Roadmaps**: Step-by-step guidance for executing improvements
-- **Quick Win Identification**: Immediate opportunities for code quality enhancement
-- **Technical Debt Quantification**: Measurable metrics for tracking improvement progress
+### Functionality Grouping
 
-### 📊 **Executive Dashboard & Analytics**
-- **Real-Time Visualization**: Interactive charts and graphs powered by advanced data visualization
-- **Customizable Metrics**: Track KPIs that matter to the organization
-- **Trend Analysis**: Historical tracking of code quality evolution
-- **Export Capabilities**: Professional reports in multiple formats for stakeholder presentations
+- Automatic grouping by folder structure, naming patterns, and import relationships
+- Built-in domain categories such as authentication, database, API, UI, testing, configuration, utilities, security, payment, notification, analytics, admin, user, search, and storage
+- Group-level metrics for files, lines of code, complexity, dependencies, and entry points
+- Documentation organized around functional areas instead of only raw file paths
 
-### 🎯 **Semantic Functionality Grouping**
-- **AI-Powered Clustering**: Machine learning algorithms identify logical code boundaries
-- **Architectural Insights**: Automatic detection of design patterns and architectural styles
-- **Module Relationship Mapping**: Visual representation of component dependencies
-- **Domain-Driven Organization**: Code grouped by business functionality, not just file structure
+### Documentation Generator
 
-### ⚡ **Performance Intelligence**
-- **Complexity Analysis**: Cyclomatic complexity and maintainability index calculation
-- **Performance Profiling**: Identification of computational bottlenecks and optimization opportunities
-- **Code Quality Metrics**: Comprehensive scoring across multiple quality dimensions
-- **Scalability Assessment**: Predictive analysis of code scalability characteristics
+The app creates Markdown output that is useful for humans and AI coding agents:
 
----
+- `PROJECT_OVERVIEW.md`
+- `INDEX.md`
+- `API_REFERENCE.md`
+- per-file documentation
+- functionality group documentation
 
-## 🛠️ Technology Stack: Best-in-Class Tools
+Generated docs include metrics, public APIs, classes, functions, imports, dependencies, language features, parse warnings, and AI summaries when Watson analysis is enabled.
 
-| Category | Technology | Purpose |
-|----------|-----------|---------|
-| **AI/ML Platform** | IBM Watson AI (watsonx.ai) | Enterprise cognitive computing and natural language processing |
-| **UI Framework** | Flet (Flutter-based) | Cross-platform, hardware-accelerated Material Design interface |
-| **Static Analysis** | pylint, bandit, radon, mypy | Multi-dimensional code quality and security analysis |
-| **Code Parsing** | Python AST, tree-sitter | Language-agnostic abstract syntax tree generation |
-| **Documentation** | Jinja2, Markdown | Template-based documentation generation |
-| **Data Validation** | Pydantic | Type-safe data models with automatic validation |
-| **Visualization** | Plotly | Interactive, publication-quality data visualization |
+### Code Review Engine
 
----
+Static analysis and custom checks detect practical issues:
 
-## 🎯 Supported Languages & Ecosystems
+- hardcoded passwords and API keys
+- SQL injection patterns
+- `eval` and `exec` usage
+- bare `except` blocks
+- empty `except: pass` blocks
+- mutable default arguments
+- high cyclomatic complexity
+- Pylint code quality findings
+- Bandit security findings
+- common Python style and reliability patterns
 
-### Currently Supported
-- **Python** (.py) - Full AST parsing, type checking, and security analysis
-- **JavaScript** (.js, .jsx, .mjs) - ES6+ support with framework detection
-- **TypeScript** (.ts, .tsx) - Type-aware analysis with interface extraction
+Review output is saved as:
 
-### Coming Soon
-- Java, C#, Go, Rust, PHP, Ruby, and more
+- `review-findings.json`
+- `REVIEW_REPORT.md`
 
----
+### Improvement Suggestions
 
-## 🚀 Quick Start Guide
+Findings become actionable suggestions with:
 
-### Prerequisites
-- **Python 3.10+** (Latest stable version recommended)
-- **IBM Watson AI Credentials** (Free tier available for evaluation)
-- **4GB RAM minimum** (8GB recommended for large projects)
+- priority score
+- effort level
+- impact level
+- affected files
+- related finding IDs
+- rationale
+- benefits
+- considerations
+- risks
+- implementation steps
+- estimated time
 
-### Installation (5 Minutes)
+Roadmap output is saved as:
+
+- `improvement-suggestions.json`
+- `IMPROVEMENT_ROADMAP.md`
+
+### Desktop Dashboard
+
+The Flet UI provides a single workspace for the whole flow:
+
+- Home page with recent scan history
+- Scan page with folder selection, analysis options, progress stages, and recent file activity
+- Overview page with metrics and distribution charts
+- Documentation browser with search, group navigation, and Markdown rendering
+- Findings page with searchable review results
+- Suggestions page with searchable priority-ranked improvements
+- Settings page for Watson credentials, model settings, and analysis options
+
+## IBM Bob Hackathon Fit
+
+This project is designed around real developer workflow acceleration:
+
+- Full repository context instead of isolated code snippets
+- Fast project understanding for unfamiliar codebases
+- Automated documentation generation from actual source structure
+- Review findings converted into implementation-ready improvement plans
+- Practical AI-assisted development that keeps code, docs, review, and next actions in one place
+
+The strongest pitch framing is convenience with substance: one workflow for understanding, documenting, reviewing, and improving a codebase.
+
+## Current Language Support
+
+| Language or File Type | Current Support |
+|---|---|
+| Python | AST parsing, imports, functions, classes, metrics, static review, security review |
+| JavaScript | file detection, import extraction, basic framework detection, metrics |
+| TypeScript | file detection, import extraction, basic framework detection, metrics |
+| JSON | file detection and documentation coverage |
+| YAML | file detection and documentation coverage |
+| Markdown | file detection and documentation coverage |
+| Text | file detection and documentation coverage |
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Desktop UI | Flet |
+| Core language | Python 3.10+ |
+| Data models | Pydantic |
+| AI integration | IBM watsonx.ai API |
+| Static analysis | Python AST, Pylint, Bandit |
+| Documentation | Jinja2, Markdown |
+| Cache | SQLite |
+| Config | YAML, dotenv, JSON user config |
+| Charts | Flet chart components and SVG-rendered chart assets |
+
+## Architecture
+
+```text
+Flet Desktop UI
+  Home, Scan, Overview, Docs, Findings, Suggestions, Settings
+
+Analysis Orchestrator
+  Scanner -> Analyzer -> Watson Service -> Grouper
+
+Review Pipeline
+  Static Analyzer -> AI Reviewer -> Finding Classifier
+
+Suggestion Pipeline
+  Suggestion Generator -> Prioritizer -> Roadmap Generator
+
+Output Layer
+  Markdown docs, JSON reports, review report, improvement roadmap
+
+Storage
+  SQLite cache, local scan history, project output folder
+```
+
+## Generated Output
+
+After a scan, project artifacts are written into the analyzed project under:
+
+```text
+.codebase-analyzer/
+  docs/
+    PROJECT_OVERVIEW.md
+    INDEX.md
+    API_REFERENCE.md
+    files/
+    functionality_groups/
+  review/
+    review-findings.json
+    REVIEW_REPORT.md
+  suggestions/
+    improvement-suggestions.json
+    IMPROVEMENT_ROADMAP.md
+```
+
+Recent scan history is stored locally under:
+
+```text
+~/.codebase-analyzer/history/
+```
+
+## Setup
+
+### Requirements
+
+- Python 3.10 or newer
+- IBM watsonx.ai API key and project ID for AI features
+- macOS, Linux, or Windows with Python desktop app support
+
+### Install
 
 ```bash
-# 1. Navigate to project directory
 cd codebase-analyzer
-
-# 2. Create isolated virtual environment
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# 3. Install dependencies
+python -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
+```
 
-# 4. Configure IBM Watson credentials
+Windows activation:
+
+```bash
+.venv\Scripts\activate
+```
+
+### Configure Watson
+
+Create an environment file:
+
+```bash
 cp .env.example .env
-# Edit .env with your credentials
+```
 
-# 5. Launch application
+Set the required values:
+
+```env
+WATSON_API_KEY=replace_with_api_key
+WATSON_URL=https://us-south.ml.cloud.ibm.com
+WATSON_PROJECT_ID=replace_with_project_id
+WATSON_MODEL_ID=openai/gpt-oss-120b
+WATSON_MAX_TOKENS=2000
+WATSON_TEMPERATURE=0
+```
+
+Credentials can also be entered through the app settings screen. User settings are saved to:
+
+```text
+codebase-analyzer/config/user_config.json
+```
+
+That file is ignored by git.
+
+## Run
+
+```bash
+cd codebase-analyzer
+source .venv/bin/activate
 python run_ui.py
 ```
 
-### Configuration
+Windows:
 
-**Environment Variables** (`.env`):
-```env
-WATSON_API_KEY=your_api_key_here
-WATSON_URL=https://us-south.ml.cloud.ibm.com
-WATSON_PROJECT_ID=your_project_id_here
+```bash
+cd codebase-analyzer
+.venv\Scripts\activate
+python run_ui.py
 ```
 
-**Advanced Configuration** (`config/config.yaml`):
-- Custom ignore patterns
-- Language-specific settings
-- Review severity thresholds
-- Documentation templates
-- Cache optimization
+## App Workflow
 
----
+1. Open the app.
+2. Enter Watson credentials in Settings when AI features are needed.
+3. Start a new analysis.
+4. Select or paste a project folder path.
+5. Choose analysis options:
+   - AI-powered analysis
+   - documentation generation
+   - code review
+   - improvement suggestions
+6. Run the scan.
+7. Review the Overview dashboard.
+8. Browse generated docs, findings, and suggestions.
 
-## 💼 Use Cases & Applications
+## Future Roadmap
 
-### Enterprise Software Development
-- **Legacy Code Modernization**: Understand and document decades-old codebases
-- **Merger & Acquisition Due Diligence**: Rapid technical assessment of acquired codebases
-- **Compliance Auditing**: Automated verification of coding standards and security policies
-- **Knowledge Transfer**: Preserve institutional knowledge through comprehensive documentation
+### Broader Language Intelligence
 
-### Startup & Agile Teams
-- **Rapid Prototyping**: Maintain documentation velocity during fast-paced development
-- **Technical Debt Management**: Continuous monitoring prevents accumulation of technical debt
-- **Code Review Automation**: Augment human reviewers with AI-powered analysis
-- **Onboarding Acceleration**: New team members become productive faster
+Planned language expansion includes deeper support for the most common production stacks:
 
-### Open Source Projects
-- **Contributor Onboarding**: Lower barriers to entry with comprehensive documentation
-- **Quality Assurance**: Maintain high standards across distributed contributor base
-- **Security Hardening**: Proactive vulnerability detection protects users
-- **Community Growth**: Better documentation attracts more contributors
+- Java
+- C#
+- Go
+- Rust
+- PHP
+- Ruby
+- Kotlin
+- Swift
+- C
+- C++
+- Scala
+- SQL
+- HTML and CSS
 
-### Educational Institutions
-- **Code Assessment**: Automated grading and feedback for programming assignments
-- **Learning Analytics**: Track student progress through code quality metrics
-- **Best Practice Teaching**: Demonstrate professional coding standards
-- **Research Applications**: Analyze large-scale code repositories for academic research
+Future versions should add full AST parsing, framework-specific conventions, public API extraction, dependency mapping, and code review rules for these ecosystems.
 
----
+### Swappable AI Backend
 
-## 📊 Architecture Overview
+The current implementation integrates IBM watsonx.ai. A future provider adapter layer should make the AI backend swappable, so each team can choose a preferred model stack.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Flet UI Layer (Material Design)           │
-│  ┌──────────┬──────────┬──────────┬──────────┬──────────┐  │
-│  │Dashboard │  Scan    │ Findings │Suggestions│ Settings │  │
-│  └──────────┴──────────┴──────────┴──────────┴──────────┘  │
-└─────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────┐
-│                   Core Analysis Engine                       │
-│  ┌──────────────┬──────────────┬──────────────────────┐    │
-│  │   Scanner    │   Analyzer   │   Grouper            │    │
-│  │  (Recursive) │ (AST Parser) │ (AI Clustering)      │    │
-│  └──────────────┴──────────────┴──────────────────────┘    │
-└─────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────┐
-│                  Intelligence Layer                          │
-│  ┌──────────────┬──────────────┬──────────────────────┐    │
-│  │ Watson AI    │Static Analysis│  Review Engine      │    │
-│  │ (Cognitive)  │(Multi-tool)   │ (Classification)    │    │
-│  └──────────────┴──────────────┴──────────────────────┘    │
-└─────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────┐
-│                   Output Generation                          │
-│  ┌──────────────┬──────────────┬──────────────────────┐    │
-│  │Documentation │  Reports     │  Suggestions         │    │
-│  │ (Markdown)   │  (JSON/PDF)  │  (Prioritized)       │    │
-│  └──────────────┴──────────────┴──────────────────────┘    │
-└─────────────────────────────────────────────────────────────┘
-```
+Planned backend options include:
 
----
+- IBM watsonx.ai models
+- IBM Granite code models
+- OpenAI models
+- Anthropic Claude models
+- Google Gemini models
+- local models through Ollama or compatible OpenAI-style endpoints
+- custom enterprise AI gateways
 
-## 🎓 How It Works
+The target design is a simple provider interface for code summaries, review findings, grouping hints, and improvement suggestions.
 
-### 1. **Intelligent Scanning Phase**
-The scanner engine performs recursive directory traversal with intelligent filtering, respecting gitignore patterns and custom exclusions. Files are categorized by language and queued for analysis.
+### More Agent-Friendly Output
 
-### 2. **Deep Analysis Phase**
-Abstract Syntax Trees (AST) are generated for each file, extracting functions, classes, imports, and dependencies. Static analysis tools run in parallel, checking for code quality, security vulnerabilities, and best practice violations.
+Future documentation output can become even more useful for AI coding agents:
 
-### 3. **AI Enhancement Phase**
-IBM Watson AI processes code semantics, generating natural language descriptions, identifying design patterns, and detecting logical issues that static analysis cannot catch.
+- compact repository maps
+- task-ready context packs
+- change impact summaries
+- generated test plans
+- architecture decision summaries
+- onboarding briefs for new contributors
 
-### 4. **Intelligent Grouping Phase**
-Machine learning algorithms cluster related files into functional groups based on import relationships, naming patterns, and semantic similarity.
+### Smarter Review And Planning
 
-### 5. **Documentation Generation Phase**
-Jinja2 templates are populated with analysis results, creating comprehensive Markdown documentation with cross-references, code metrics, and AI-generated explanations.
+Planned upgrades:
 
-### 6. **Review & Suggestion Phase**
-Findings are classified by severity and type. The suggestion engine generates prioritized improvement recommendations with effort estimates and implementation guidance.
+- deeper cross-file bug detection
+- duplicate logic detection
+- dead code detection
+- dependency risk scoring
+- test coverage awareness
+- security policy presets
+- CI-ready quality gates
+- direct GitHub issue export
+- suggested pull request breakdowns
 
-### 7. **Visualization Phase**
-Interactive dashboards present results through charts, graphs, and filterable lists, enabling stakeholders to explore findings at any level of detail.
+### Team And Workflow Features
 
----
+Potential goals:
 
-## 📈 Performance Benchmarks
+- project comparison across scans
+- trend charts across time
+- shared team reports
+- exportable executive summaries
+- PDF and HTML report export
+- repository health score
+- saved filters and triage status
+- integration with GitHub, GitLab, Jira, Linear, and Slack
 
-| Project Size | Files | Lines of Code | Analysis Time | Memory Usage |
-|--------------|-------|---------------|---------------|--------------|
-| Small | 50 | 5,000 | 15 seconds | 150 MB |
-| Medium | 500 | 50,000 | 2 minutes | 400 MB |
-| Large | 2,000 | 200,000 | 8 minutes | 1.2 GB |
-| Enterprise | 10,000+ | 1,000,000+ | 35 minutes | 3.5 GB |
+## Project Status
 
-*Benchmarks measured on Apple M1 Pro with 16GB RAM*
+The current app is a hackathon-ready proof of concept with a working desktop workflow, real repository scanning, generated documentation, static review, suggestion generation, local cache, scan history, and a dashboard UI.
 
----
+The clearest next step is deeper language intelligence and a formal AI provider adapter layer.
 
-## 🔐 Security & Privacy
+## License
 
-- **Local Processing**: All analysis runs locally; code never leaves the machine
-- **API Security**: Watson AI credentials encrypted at rest
-- **No Data Collection**: Zero telemetry or usage tracking
-- **Open Source**: Full transparency through public codebase
-- **Audit Trail**: Complete logging of all operations
-
----
-
-## 🤝 Contributing
-
-This project welcomes contributions from the community. Whether reporting bugs, suggesting features, or submitting pull requests, all contributions help make this tool better.
-
----
-
-## 📄 License
-
-[Add your license here]
-
----
-
-## 🙏 Acknowledgments
-
-- **IBM Watson AI** - Powering cognitive code analysis
-- **Flet Framework** - Enabling beautiful cross-platform interfaces
-- **Open Source Community** - Building the tools that make this possible
-
----
-
-## 📞 Support & Resources
-
-- **Documentation**: [Coming Soon]
-- **Issue Tracker**: [GitHub Issues]
-- **Community Forum**: [Coming Soon]
-- **Enterprise Support**: [Contact for pricing]
-
----
-
-<div align="center">
-
-**Built with ❤️ for developers, by developers**
-
-**Version 1.0.0** | **Status: Production Ready** | **Last Updated: May 2026**
-
-[⭐ Star this project](https://github.com) | [🐛 Report Bug](https://github.com) | [💡 Request Feature](https://github.com)
-
-</div>
+MIT License. See [LICENSE](LICENSE).
