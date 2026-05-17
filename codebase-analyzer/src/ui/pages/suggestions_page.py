@@ -9,6 +9,8 @@ from ..theme import AppTheme
 from ..components import SuggestionCard, ChipFilterRow, SortControl
 from ..utils import create_empty_state, create_badge
 
+PAGE_SIZE = 25
+
 EFFORT_COLORS = {"low": AppTheme.SUCCESS, "medium": "#FFA726", "high": AppTheme.ERROR}
 IMPACT_COLORS = {"low": "#BDBDBD", "medium": "#42A5F5", "high": "#7E57C2"}
 CATEGORY_COLORS = {
@@ -42,6 +44,7 @@ class SuggestionsPage(ft.Container):
         self._search_query = ""
         self._sort_option = "Priority"
         self._sort_asc = False
+        self._visible_count = PAGE_SIZE
 
         super().__init__(
             content=self._build_content(),
@@ -134,19 +137,8 @@ class SuggestionsPage(ft.Container):
             ft.Row(controls=[cat_chips, ft.Container(expand=True), sort_control], wrap=True),
         ], spacing=6)
 
-        # Cards list
-        cards = [SuggestionCard(suggestion=s, on_accept=self.on_accept, on_dismiss=self.on_dismiss)
-                 for s in self.filtered_suggestions]
-
-        list_view = ft.ListView(controls=cards, spacing=10,
-                                 padding=ft.Padding(top=8, bottom=8, left=0, right=0), expand=True)
-
-        if not self.filtered_suggestions:
-            list_view = ft.Column(controls=[
-                create_empty_state(icon=ft.Icons.FILTER_ALT_OFF, title="No Matching Suggestions",
-                                   description="Adjust filters to see results")
-            ], horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                alignment=ft.MainAxisAlignment.CENTER, expand=True)
+        # Cards list with pagination
+        self._list_view = self._build_list_view()
 
         return ft.Column(controls=[
             header,
@@ -155,8 +147,42 @@ class SuggestionsPage(ft.Container):
             ft.Container(height=6),
             filter_row,
             ft.Divider(height=1, color=AppTheme.DIVIDER_COLOR),
-            list_view,
+            self._list_view,
         ], spacing=4, expand=True)
+
+    def _build_list_view(self) -> ft.Control:
+        if not self.filtered_suggestions:
+            return ft.Column(controls=[
+                create_empty_state(icon=ft.Icons.FILTER_ALT_OFF, title="No Matching Suggestions",
+                                   description="Adjust filters to see results")
+            ], horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                alignment=ft.MainAxisAlignment.CENTER, expand=True)
+
+        visible = self.filtered_suggestions[:self._visible_count]
+        cards = [SuggestionCard(suggestion=s, on_accept=self.on_accept, on_dismiss=self.on_dismiss)
+                 for s in visible]
+
+        remaining = len(self.filtered_suggestions) - self._visible_count
+        if remaining > 0:
+            cards.append(ft.Container(
+                content=ft.TextButton(
+                    content=ft.Row(controls=[
+                        ft.Icon(ft.Icons.EXPAND_MORE, size=18, color=AppTheme.PRIMARY),
+                        ft.Text(f"Show more ({remaining} remaining)", size=14,
+                                color=AppTheme.PRIMARY, weight=ft.FontWeight.BOLD),
+                    ], spacing=6, alignment=ft.MainAxisAlignment.CENTER),
+                    on_click=self._load_more,
+                ),
+                alignment=ft.Alignment(0, 0),
+                padding=ft.Padding(top=12, bottom=12, left=0, right=0),
+            ))
+
+        return ft.ListView(controls=cards, spacing=10, expand=True)
+
+    def _load_more(self, e):
+        self._visible_count += PAGE_SIZE
+        self._list_view.controls = self._build_list_view().controls
+        self._list_view.update()
 
     def _apply_filters(self):
         self.filtered_suggestions = self.all_suggestions.copy()
@@ -175,6 +201,7 @@ class SuggestionsPage(ft.Container):
             self.filtered_suggestions = [s for s in self.filtered_suggestions
                                           if q in s.title.lower() or q in s.description.lower()]
         self._apply_sort()
+        self._visible_count = PAGE_SIZE
         self.content = self._build_content()
         self.update()
 
@@ -218,5 +245,6 @@ class SuggestionsPage(ft.Container):
         self._impact_filter = []
         self._category_filter = []
         self._search_query = ""
+        self._visible_count = PAGE_SIZE
         self.content = self._build_content()
         self.update()

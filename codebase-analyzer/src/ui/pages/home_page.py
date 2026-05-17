@@ -4,10 +4,19 @@ Home Page
 Welcome page with project selection and recent projects.
 """
 
+from datetime import datetime
 from typing import Optional, Callable, List
 import flet as ft
 from ..theme import AppTheme
 from ..utils import create_empty_state
+
+
+def _format_timestamp(iso_str: str) -> str:
+    try:
+        dt = datetime.fromisoformat(iso_str)
+        return dt.strftime("%b %d, %Y %H:%M")
+    except (ValueError, TypeError):
+        return str(iso_str)
 
 
 class HomePage(ft.Container):
@@ -16,16 +25,11 @@ class HomePage(ft.Container):
     def __init__(
         self,
         on_new_analysis: Callable,
-        recent_projects: Optional[List[dict]] = None
+        recent_projects: Optional[List[dict]] = None,
+        on_open_project: Optional[Callable] = None
     ):
-        """
-        Initialize home page
-
-        Args:
-            on_new_analysis: Callback for starting new analysis
-            recent_projects: List of recent project data
-        """
         self.on_new_analysis = on_new_analysis
+        self.on_open_project = on_open_project
         self.recent_projects = recent_projects or []
 
         super().__init__(
@@ -161,7 +165,7 @@ class HomePage(ft.Container):
                                         color=AppTheme.TEXT_SECONDARY
                                     ),
                                     ft.Text(
-                                        f"Last analyzed: {project.get('last_analyzed', 'Never')}",
+                                        f"Last analyzed: {_format_timestamp(project.get('last_analyzed', 'Never'))}",
                                         size=AppTheme.FONT_SIZE_SMALL,
                                         color=AppTheme.TEXT_SECONDARY
                                     )
@@ -294,9 +298,9 @@ class HomePage(ft.Container):
         )
 
     def _open_project(self, project: dict):
-        """Open a recent project"""
-        # This would be implemented to load the project
-        pass
+        """Open a recent project from history."""
+        if self.on_open_project:
+            self.on_open_project(project)
 
     def refresh(self, recent_projects: Optional[List[dict]] = None):
         """Refresh the page with updated data"""

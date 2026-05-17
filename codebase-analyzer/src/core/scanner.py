@@ -231,7 +231,7 @@ class Scanner:
         dir_name = dir_path.name
 
         # Common directories to always ignore
-        if dir_name in {'.git', '.svn', '.hg', '__pycache__', 'node_modules', '.venv', 'venv', 'env'}:
+        if dir_name in {'.git', '.svn', '.hg', '__pycache__', 'node_modules', '.venv', 'venv', 'env', '.codebase-analyzer'}:
             return True
 
         # Check against ignore patterns

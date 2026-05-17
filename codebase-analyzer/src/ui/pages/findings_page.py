@@ -9,6 +9,8 @@ from ..theme import AppTheme
 from ..components import FindingCard, ChipFilterRow, SortControl
 from ..utils import create_empty_state, create_badge, create_stacked_bar
 
+PAGE_SIZE = 25
+
 SEVERITY_COLORS = {
     "critical": AppTheme.CRITICAL,
     "high": AppTheme.HIGH,
@@ -47,6 +49,7 @@ class FindingsPage(ft.Container):
         self._search_query = ""
         self._sort_option = "Severity"
         self._sort_asc = True
+        self._visible_count = PAGE_SIZE
 
         super().__init__(
             content=self._build_content(),
@@ -136,19 +139,8 @@ class FindingsPage(ft.Container):
             sort_control,
         ], spacing=0, wrap=True)
 
-        # Findings list
-        cards = [FindingCard(finding=f, on_resolve=self.on_resolve, on_ignore=self.on_ignore)
-                 for f in self.filtered_findings]
-
-        self._list_view = ft.ListView(controls=cards, spacing=10,
-                                       padding=ft.Padding(top=8, bottom=8, left=0, right=0), expand=True)
-
-        if not self.filtered_findings:
-            self._list_view = ft.Column(controls=[
-                create_empty_state(icon=ft.Icons.FILTER_ALT_OFF, title="No Matching Findings",
-                                   description="Adjust filters to see results")
-            ], horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                alignment=ft.MainAxisAlignment.CENTER, expand=True)
+        # Findings list with pagination
+        self._list_view = self._build_list_view()
 
         return ft.Column(controls=[
             header,
@@ -160,6 +152,40 @@ class FindingsPage(ft.Container):
             ft.Divider(height=1, color=AppTheme.DIVIDER_COLOR),
             self._list_view,
         ], spacing=6, expand=True)
+
+    def _build_list_view(self) -> ft.Control:
+        if not self.filtered_findings:
+            return ft.Column(controls=[
+                create_empty_state(icon=ft.Icons.FILTER_ALT_OFF, title="No Matching Findings",
+                                   description="Adjust filters to see results")
+            ], horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                alignment=ft.MainAxisAlignment.CENTER, expand=True)
+
+        visible = self.filtered_findings[:self._visible_count]
+        cards = [FindingCard(finding=f, on_resolve=self.on_resolve, on_ignore=self.on_ignore)
+                 for f in visible]
+
+        remaining = len(self.filtered_findings) - self._visible_count
+        if remaining > 0:
+            cards.append(ft.Container(
+                content=ft.TextButton(
+                    content=ft.Row(controls=[
+                        ft.Icon(ft.Icons.EXPAND_MORE, size=18, color=AppTheme.PRIMARY),
+                        ft.Text(f"Show more ({remaining} remaining)", size=14,
+                                color=AppTheme.PRIMARY, weight=ft.FontWeight.BOLD),
+                    ], spacing=6, alignment=ft.MainAxisAlignment.CENTER),
+                    on_click=self._load_more,
+                ),
+                alignment=ft.Alignment(0, 0),
+                padding=ft.Padding(top=12, bottom=12, left=0, right=0),
+            ))
+
+        return ft.ListView(controls=cards, spacing=10, expand=True)
+
+    def _load_more(self, e):
+        self._visible_count += PAGE_SIZE
+        self._list_view.controls = self._build_list_view().controls
+        self._list_view.update()
 
     def _apply_filters(self):
         self.filtered_findings = self.all_findings.copy()
@@ -176,6 +202,7 @@ class FindingsPage(ft.Container):
                                        if q in f.title.lower() or q in f.description.lower()
                                        or q in str(f.location.file_path).lower()]
         self._apply_sort()
+        self._visible_count = PAGE_SIZE
         self.content = self._build_content()
         self.update()
 
@@ -212,5 +239,6 @@ class FindingsPage(ft.Container):
         self._severity_filter = []
         self._type_filter = []
         self._search_query = ""
+        self._visible_count = PAGE_SIZE
         self.content = self._build_content()
         self.update()

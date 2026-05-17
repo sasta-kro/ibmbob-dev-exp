@@ -10,6 +10,7 @@ import flet as ft
 from ..core.orchestrator import AnalysisOrchestrator
 from ..models.project import Project
 from ..models.suggestion import SuggestionStatus
+from ..services.scan_history import ScanHistoryService
 from ..utils.config import Config
 from .theme import AppTheme
 from .pages import (
@@ -36,6 +37,7 @@ class CodebaseAnalyzerApp:
         self.page = page
         self.config = Config()
         self.orchestrator = AnalysisOrchestrator(self.config)
+        self.scan_history = ScanHistoryService()
         self.current_project: Optional[Project] = None
         self.documentation_path: Optional[Path] = None
         self.current_page = "home"
@@ -157,7 +159,9 @@ class CodebaseAnalyzerApp:
         """Get content for a specific page"""
         if page_name == "home":
             return HomePage(
-                on_new_analysis=self._start_new_analysis
+                on_new_analysis=self._start_new_analysis,
+                recent_projects=self.scan_history.list_scans(),
+                on_open_project=self._open_history_project
             )
 
         elif page_name == "scan":
@@ -218,6 +222,17 @@ class CodebaseAnalyzerApp:
         """Start a new analysis"""
         self._navigate_to("scan")
 
+    def _open_history_project(self, project_data: dict):
+        """Load a project from scan history and show overview."""
+        project = self.scan_history.load_scan(project_data["id"])
+        if project:
+            self.current_project = project
+            if project.output_path:
+                self.documentation_path = project.output_path
+            self._navigate_to("overview")
+        else:
+            self._show_snackbar("Could not load scan history", AppTheme.ERROR)
+
     async def _select_folder(self):
         """Open native folder picker dialog."""
         path = await self.folder_picker.get_directory_path(dialog_title="Select project folder")
@@ -261,6 +276,11 @@ class CodebaseAnalyzerApp:
                     output_dir=str(output_root / "suggestions"),
                     use_ai=options.get("enable_ai", False)
                 )
+
+            try:
+                self.scan_history.save_scan(self.current_project)
+            except Exception as save_err:
+                print(f"[HISTORY] Failed to save scan: {save_err}")
 
             if self.active_scan_page:
                 self.active_scan_page.is_scanning = False
@@ -336,6 +356,7 @@ class CodebaseAnalyzerApp:
     def _refresh_current_page(self):
         """Refresh the active page content."""
         self.content_area.content = self._get_page_content(self.current_page)
+        self.page.update()
 
 
 def main(page: ft.Page):
