@@ -1,4 +1,4 @@
-# Codebase Analyzer
+<img width="1920" height="1080" alt="IBM BOB Hackathon Slides" src="https://github.com/user-attachments/assets/a7b94b51-1e19-48fa-bd4c-9dcd26070926" /># Codebase Analyzer
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
 [![Flet](https://img.shields.io/badge/Flet-Desktop%20UI-009DFF?style=flat)](https://flet.dev/)
@@ -7,6 +7,8 @@
 [![SQLite](https://img.shields.io/badge/SQLite-Cache-003B57?style=flat&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
 [![Markdown](https://img.shields.io/badge/Markdown-Docs-000000?style=flat&logo=markdown&logoColor=white)](https://www.markdownguide.org/)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat)](LICENSE)
+
+<img width="1920" height="1080" alt="IBM BOB Hackathon Slides" src="https://github.com/user-attachments/assets/e92181b0-fb5c-4988-8184-ee8eb4a53f08" />
 
 Codebase Analyzer is a desktop app that turns a repository into an organized code intelligence workspace. The app scans a codebase, maps repository structure, groups related files, generates Markdown documentation, finds risky code patterns, and turns review results into prioritized improvement plans.
 
