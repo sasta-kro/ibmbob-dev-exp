@@ -1,12 +1,30 @@
 """Configuration management for the Codebase Analyzer application."""
 
 import os
+import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import yaml
 from dotenv import load_dotenv
 from loguru import logger
+
+
+USER_CONFIG_FILENAME = "user_config.json"
+
+DEFAULT_USER_CONFIG = {
+    "watson_api_key": "",
+    "watson_url": "https://us-south.ml.cloud.ibm.com",
+    "watson_project_id": "",
+    "watson_model_id": "openai/gpt-oss-120b",
+    "watson_max_tokens": 2000,
+    "watson_temperature": 0,
+    "enable_ai": True,
+    "generate_docs": True,
+    "perform_review": True,
+    "generate_suggestions": True,
+    "theme": "light",
+}
 
 
 class Config:
@@ -19,18 +37,20 @@ class Config:
         Args:
             config_path: Path to config.yaml file. If None, uses default location.
         """
-        # Load environment variables
         load_dotenv()
 
-        # Determine config file path
+        project_root = Path(__file__).parent.parent.parent
+
         if config_path is None:
-            # Default to config/config.yaml relative to project root
-            project_root = Path(__file__).parent.parent.parent
             config_path = project_root / "config" / "config.yaml"
 
         self.config_path = config_path
         self._config: Dict[str, Any] = {}
         self._load_config()
+
+        self._user_config_path = project_root / "config" / USER_CONFIG_FILENAME
+        self._user_config: Dict[str, Any] = {}
+        self._load_user_config()
 
     def _load_config(self) -> None:
         """Load configuration from YAML file."""
@@ -45,6 +65,52 @@ class Config:
         except Exception as e:
             logger.error(f"Error loading config: {e}. Using defaults.")
             self._config = self._get_default_config()
+
+    def _load_user_config(self) -> None:
+        """Load user config from JSON. On first run, seed from env vars and save."""
+        if self._user_config_path.exists():
+            try:
+                with open(self._user_config_path, 'r', encoding='utf-8') as f:
+                    self._user_config = json.load(f)
+                logger.info(f"User config loaded from {self._user_config_path}")
+            except Exception as e:
+                logger.error(f"Error loading user config: {e}")
+                self._user_config = dict(DEFAULT_USER_CONFIG)
+        else:
+            self._user_config = dict(DEFAULT_USER_CONFIG)
+            self._user_config["watson_api_key"] = os.getenv("WATSON_API_KEY", "")
+            self._user_config["watson_url"] = os.getenv("WATSON_URL", DEFAULT_USER_CONFIG["watson_url"])
+            self._user_config["watson_project_id"] = os.getenv("WATSON_PROJECT_ID", "")
+            self._user_config["watson_model_id"] = os.getenv("WATSON_MODEL_ID", DEFAULT_USER_CONFIG["watson_model_id"])
+            self._user_config["watson_max_tokens"] = int(os.getenv("WATSON_MAX_TOKENS", str(DEFAULT_USER_CONFIG["watson_max_tokens"])))
+            self._user_config["watson_temperature"] = float(os.getenv("WATSON_TEMPERATURE", str(DEFAULT_USER_CONFIG["watson_temperature"])))
+            self.save_user_config()
+            logger.info("First run detected — user config seeded from env vars")
+
+    @property
+    def is_first_run(self) -> bool:
+        """True if user config was just created (no API key set)."""
+        return not self._user_config.get("watson_api_key")
+
+    @property
+    def user_config(self) -> Dict[str, Any]:
+        """Get full user config dict."""
+        return dict(self._user_config)
+
+    def update_user_config(self, updates: Dict[str, Any]) -> None:
+        """Update user config with given key-value pairs and persist."""
+        self._user_config.update(updates)
+        self.save_user_config()
+
+    def save_user_config(self) -> None:
+        """Save user config to JSON."""
+        try:
+            self._user_config_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(self._user_config_path, 'w', encoding='utf-8') as f:
+                json.dump(self._user_config, f, indent=2)
+            logger.info(f"User config saved to {self._user_config_path}")
+        except Exception as e:
+            logger.error(f"Error saving user config: {e}")
 
     def _get_default_config(self) -> Dict[str, Any]:
         """Get default configuration."""
@@ -178,33 +244,27 @@ class Config:
 
     @property
     def watson_api_key(self) -> Optional[str]:
-        """Get IBM Watson API key."""
-        return os.getenv('WATSON_API_KEY')
+        return self._user_config.get('watson_api_key') or os.getenv('WATSON_API_KEY')
 
     @property
     def watson_url(self) -> str:
-        """Get IBM Watson URL."""
-        return os.getenv('WATSON_URL', 'https://us-south.ml.cloud.ibm.com')
+        return self._user_config.get('watson_url') or os.getenv('WATSON_URL', 'https://us-south.ml.cloud.ibm.com')
 
     @property
     def watson_project_id(self) -> Optional[str]:
-        """Get IBM Watson project ID."""
-        return os.getenv('WATSON_PROJECT_ID')
+        return self._user_config.get('watson_project_id') or os.getenv('WATSON_PROJECT_ID')
 
     @property
     def watson_model_id(self) -> str:
-        """Get IBM Watson model ID."""
-        return os.getenv('WATSON_MODEL_ID', 'openai/gpt-oss-120b')
+        return self._user_config.get('watson_model_id') or os.getenv('WATSON_MODEL_ID', 'openai/gpt-oss-120b')
 
     @property
     def watson_max_tokens(self) -> int:
-        """Get Watson max tokens."""
-        return int(os.getenv('WATSON_MAX_TOKENS', 2048))
+        return int(self._user_config.get('watson_max_tokens', 0) or os.getenv('WATSON_MAX_TOKENS', 2048))
 
     @property
     def watson_temperature(self) -> float:
-        """Get Watson temperature."""
-        return float(os.getenv('WATSON_TEMPERATURE', 0.7))
+        return float(self._user_config.get('watson_temperature', 0) or os.getenv('WATSON_TEMPERATURE', 0.7))
 
     @property
     def window_width(self) -> int:

@@ -62,9 +62,9 @@ class WatsonService:
             config: Configuration object with API credentials
         """
         self.config = config
-        self.api_key = config.get('watson_api_key') or os.getenv('WATSON_API_KEY')
-        self.project_id = config.get('watson_project_id') or os.getenv('WATSON_PROJECT_ID') or self.DEFAULT_PROJECT_ID
-        self.model_id = config.get('watson_model_id') or os.getenv('WATSON_MODEL_ID') or self.DEFAULT_MODEL
+        self.api_key = config.watson_api_key
+        self.project_id = config.watson_project_id or self.DEFAULT_PROJECT_ID
+        self.model_id = config.watson_model_id or self.DEFAULT_MODEL
 
         if not self.api_key:
             logger.warning("Watson API key not configured. AI features will be disabled.")

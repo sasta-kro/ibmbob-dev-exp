@@ -155,8 +155,59 @@ class CodebaseAnalyzerApp:
             self.content_area.content = self._get_page_content(self.current_page)
             self.page.update()
 
+    @property
+    def _config_missing(self) -> bool:
+        return not self.config.watson_api_key or not self.config.watson_project_id
+
+    def _build_config_missing_page(self) -> ft.Container:
+        return ft.Container(
+            content=ft.Column(
+                controls=[
+                    ft.Icon(ft.Icons.WARNING_AMBER_ROUNDED, color=AppTheme.WARNING, size=64),
+                    ft.Container(height=16),
+                    ft.Text(
+                        "Configuration Required",
+                        size=AppTheme.FONT_SIZE_TITLE,
+                        weight=ft.FontWeight.BOLD,
+                        color=AppTheme.TEXT_PRIMARY,
+                    ),
+                    ft.Container(height=8),
+                    ft.Text(
+                        "Watson API Key and Project ID must be configured before using the analyzer.",
+                        size=AppTheme.FONT_SIZE_NORMAL,
+                        color=AppTheme.TEXT_SECONDARY,
+                        text_align=ft.TextAlign.CENTER,
+                    ),
+                    ft.Container(height=24),
+                    ft.Button(
+                        content=ft.Row(
+                            controls=[
+                                ft.Icon(ft.Icons.SETTINGS, color=AppTheme.TEXT_ON_PRIMARY),
+                                ft.Text("Go to Settings"),
+                            ],
+                            spacing=8,
+                            alignment=ft.MainAxisAlignment.CENTER,
+                        ),
+                        on_click=lambda _: self._navigate_to("settings"),
+                        style=ft.ButtonStyle(
+                            bgcolor=AppTheme.PRIMARY,
+                            color=AppTheme.TEXT_ON_PRIMARY,
+                            padding=ft.Padding(left=32, right=32, top=16, bottom=16),
+                        ),
+                    ),
+                ],
+                alignment=ft.MainAxisAlignment.CENTER,
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                expand=True,
+            ),
+            expand=True,
+        )
+
     def _get_page_content(self, page_name: str) -> ft.Control:
         """Get content for a specific page"""
+        if page_name != "settings" and self._config_missing:
+            return self._build_config_missing_page()
+
         if page_name == "home":
             return HomePage(
                 on_new_analysis=self._start_new_analysis,
@@ -205,6 +256,7 @@ class CodebaseAnalyzerApp:
 
         elif page_name == "settings":
             return SettingsPage(
+                config=self.config,
                 on_save=self._save_settings
             )
 
@@ -350,7 +402,13 @@ class CodebaseAnalyzerApp:
 
     def _save_settings(self, settings: dict):
         """Save application settings"""
-        self.settings.update(settings)
+        self.settings.update({
+            "enable_ai": settings.get("enable_ai", True),
+            "generate_docs": settings.get("generate_docs", True),
+            "perform_review": settings.get("perform_review", True),
+            "generate_suggestions": settings.get("generate_suggestions", True),
+            "theme": settings.get("theme", "light"),
+        })
         self._show_snackbar("Settings saved successfully", AppTheme.SUCCESS)
 
     def _refresh_current_page(self):
