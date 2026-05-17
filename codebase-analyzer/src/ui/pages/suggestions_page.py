@@ -1,5 +1,5 @@
 """
-Suggestions Page — display and manage improvement suggestions.
+Suggestions Page - display and manage improvement suggestions.
 """
 
 from typing import List, Optional, Callable
@@ -58,12 +58,13 @@ class SuggestionsPage(ft.Container):
 
         rows.append(ft.Divider(height=1, color=AppTheme.DIVIDER_COLOR))
 
-        # Suggestion rows — plain containers
+        # Suggestion rows - plain containers
         visible = self.filtered_suggestions[:self._visible_count]
         for s in visible:
             priority_color = AppTheme.get_priority_color(s.priority_score)
             effort_color = EFFORT_COLORS.get(s.effort.value, "#9E9E9E")
             impact_color = IMPACT_COLORS.get(s.impact.value, "#9E9E9E")
+            description_text = s.description or s.rationale or ""
 
             row = ft.Container(
                 content=ft.Row(controls=[
@@ -77,6 +78,13 @@ class SuggestionsPage(ft.Container):
                     ft.Column(controls=[
                         ft.Text(s.title, size=14, weight=ft.FontWeight.BOLD,
                                 color=AppTheme.TEXT_PRIMARY),
+                        ft.Text(
+                            description_text,
+                            size=12,
+                            color=AppTheme.TEXT_SECONDARY,
+                            max_lines=2,
+                            overflow=ft.TextOverflow.ELLIPSIS,
+                        ),
                         ft.Row(controls=[
                             ft.Container(
                                 content=ft.Text(f"Effort: {s.effort.value}", size=10,
